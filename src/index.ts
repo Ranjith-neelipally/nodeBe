@@ -60,20 +60,52 @@ app.get("/:projectId", async (req, res) => {
   }
 });
 
-app.post("/PatchNote/:projectid", async (req, response) => {
+app.patch("/EditProjectData/:projectid/:field", async (req, response) => {
   try {
-    const { projectid } = req.params;
-    const { notes } = req.body as ProjectDetailsInterface;
+    const { projectid, field } = req.params;
+    const updateData = req.body;
 
-    const updatedProject = await Project.findByIdAndUpdate(
-      projectid,
-      { $set: { notes: notes.map((note) => ({ noteString: note.noteString })) } },
-      { new: true }
-    );
+    // Ensure that the field is a valid field in your Project model
+    const validFields = [
+      "projectTitle",
+      "location",
+      "replications",
+      "treatments",
+      "notes",
+    ];
+    if (!validFields.includes(field)) {
+      return response.status(400).json({
+        response: "Invalid field specified",
+      });
+    }
+
+    let updatedProject;
+
+    if (field === "notes") {
+      // Handle updating notes separately
+      const { notes } = updateData as ProjectDetailsInterface;
+      updatedProject = await Project.findByIdAndUpdate(
+        projectid,
+        {
+          $push: {
+            notes: {
+              $each: notes.map((note) => ({ noteString: note.noteString })),
+            },
+          },
+        },
+        { new: true }
+      );
+    } else {
+      // Update the specified field
+      const updateObj = { [field]: updateData[field] };
+      updatedProject = await Project.findByIdAndUpdate(projectid, updateObj, {
+        new: true,
+      });
+    }
 
     if (updatedProject) {
       response.json({
-        response: "Note updated successfully",
+        response: "Project updated successfully",
         project: updatedProject,
       });
     } else {
@@ -81,9 +113,9 @@ app.post("/PatchNote/:projectid", async (req, response) => {
         response: "Project not found",
       });
     }
-  }  catch (error) {
-    response.json({
-      response: error,
+  } catch (error:any) {
+    response.status(500).json({
+      response: error.message,
     });
   }
 });
