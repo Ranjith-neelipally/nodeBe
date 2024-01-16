@@ -1,23 +1,21 @@
 import { Schema, model } from "mongoose";
 
+export interface ProjectDetailsInterface {
+  _id: string;
+  projectTitle: string;
+  location: string;
+  replications: number;
+  treatments: number;
+  notes: Array<{ noteString: string }>;
+}
+
+export interface NotesInterface {
+  noteString?: string | null | undefined;
+}
+
 const NotesSchema = new Schema({
-  projectId: {
+  noteString: {
     type: String,
-    require: true,
-    trim: true,
-  },
-  NoteId: {
-    type: String,
-    require: true,
-    trim: true,
-  },
-  NoteDate: {
-    type: Date,
-    require: true,
-  },
-  Note: {
-    type: String,
-    require: false,
   },
 });
 
@@ -27,7 +25,7 @@ const ProjectSchema = new Schema({
     require: true,
     trim: true,
   },
-  projectId: {
+  _id: {
     type: String,
     require: true,
     trim: true,
@@ -47,9 +45,8 @@ const ProjectSchema = new Schema({
     require: true,
     trim: true,
   },
-  note: {
+  notes: {
     type: [NotesSchema],
-    require: false,
   },
 });
 

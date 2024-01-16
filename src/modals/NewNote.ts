@@ -1,7 +1,14 @@
 import { Schema, model } from "mongoose";
 
+export interface NotesInterface{
+  ProjectId:string,
+  NoteId:string,
+  NoteDate:Date,
+  Note:string
+}
+
 const NotesSchema = new Schema({
-  projectId: {
+  ProjectId:{
     type: String,
     require: true,
     trim: true,
@@ -17,7 +24,7 @@ const NotesSchema = new Schema({
   },
   Note: {
     type: String,
-    require: false,
+    require: true,
   },
 });
 
