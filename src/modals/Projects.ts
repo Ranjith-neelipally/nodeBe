@@ -27,7 +27,6 @@ const ProjectSchema = new Schema({
   },
   _id: {
     type: String,
-    require: false,
     trim: true,
   },
   location: {

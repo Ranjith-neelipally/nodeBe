@@ -33,19 +33,6 @@ app.post("/createNewProject", async (req, res) => {
   });
 });
 
-app.post("/createNewNote", async (req, res) => {
-  await NewNote.create<NotesInterface>({
-    ProjectId: (req.body as NotesInterface).ProjectId,
-    NoteId: (req.body as NotesInterface).NoteId,
-    NoteDate: (req.body as NotesInterface).NoteDate,
-    Note: (req.body as NotesInterface).Note,
-  });
-
-  res.json({
-    response: "new Note Created",
-  });
-});
-
 app.get("/:projectId", async (req, res) => {
   try {
     const { projectId } = req.params;
@@ -55,6 +42,35 @@ app.get("/:projectId", async (req, res) => {
     });
   } catch (error) {
     res.json({
+      response: error,
+    });
+  }
+});
+
+app.get("/getNotes/:projectid/:noteId", async (req, response) => {
+  try {
+    const { projectid, noteId } = req.params;
+    const ProjectName = await Project.findById(projectid);
+    if (ProjectName) {
+      const NoteDetails = ProjectName.notes.find(
+        (note) => String(note._id) === noteId
+      );
+      if (NoteDetails) {
+        response.json({
+          note: NoteDetails,
+        });
+      } else {
+        response.json({
+          response: "no Note found",
+        });
+      }
+    } else {
+      response.json({
+        response: "no project found",
+      });
+    }
+  } catch (error) {
+    response.json({
       response: error,
     });
   }
@@ -89,7 +105,9 @@ app.patch("/EditProjectData/:projectid/:field", async (req, response) => {
         {
           $push: {
             notes: {
-              $each: notes.map((note) => ({ noteString: note.noteString })),
+              $each: notes.map((note) => ({
+                noteString: note.noteString,
+              })),
             },
           },
         },
@@ -113,12 +131,95 @@ app.patch("/EditProjectData/:projectid/:field", async (req, response) => {
         response: "Project not found",
       });
     }
-  } catch (error:any) {
+  } catch (error: any) {
     response.status(500).json({
       response: error.message,
     });
   }
 });
+
+app.delete("/deteteProject/:projectId", async (req, res) => {
+  const projectId = req.params.projectId;
+  try {
+    const deletedProject = await Project.findByIdAndDelete(projectId);
+    if (deletedProject) {
+      res.json({
+        response: projectId + "deleted",
+      });
+    } else {
+      res.json({
+        response: "no project founnd with the name " + projectId,
+      });
+    }
+  } catch (error) {
+    res.json({
+      response: "No Project Exist with that id",
+    });
+  }
+});
+
+app.delete("/deleteProject/:projectId/:noteId", async (req, res) => {
+  try {
+    const { noteId, projectId } = req.params;
+    const project = await Project.findById(projectId);
+
+    if (project) {
+      const noteDetails = project.notes.find(
+        (note) => String(note._id) === noteId.toString()
+      );
+
+      if (noteDetails) {
+        project.notes.pull(noteDetails);
+        await project.save();
+
+        res.json({
+          response: "Note deleted successfully",
+        });
+      } else {
+        res.status(404).json({
+          response: "Note not found",
+        });
+      }
+    } else {
+      res.status(404).json({
+        response: "Project not found",
+      });
+    }
+  } catch (error: any) {
+    res.status(500).json({
+      response: error.message,
+    });
+  }
+});
+
+app.patch("/editNote/:projectId/:noteId", async (req, res) => {
+  const { noteId, projectId } = req.params;
+  const { noteString: UpdatedNotesString } = req.body;
+  try {
+    const UpdatedNote = await Project.updateOne(
+      {
+        _id: projectId,
+        "notes._id": noteId,
+      },
+      { $set: { "notes.$.noteString": UpdatedNotesString } }
+    );
+
+    if (UpdatedNote) {
+      res.json({
+        response: "note Updated",
+      });
+    } else {
+      res.json({
+        response: "error",
+      });
+    }
+  } catch (error) {
+    res.json({
+      response: error.message,
+    });
+  }
+});
+
 
 
 app.listen(1430, () => {
