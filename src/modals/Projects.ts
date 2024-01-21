@@ -1,7 +1,6 @@
 import { Schema, model } from "mongoose";
 
 export interface ProjectDetailsInterface {
-  _id: string;
   projectTitle: string;
   location: string;
   replications: number;
@@ -22,26 +21,22 @@ const NotesSchema = new Schema({
 const ProjectSchema = new Schema({
   projectTitle: {
     type: String,
-    require: true,
-    trim: true,
-  },
-  _id: {
-    type: String,
+    required: true,
     trim: true,
   },
   location: {
     type: String,
-    require: true,
+    required: true,
     trim: true,
   },
   replications: {
     type: Number,
-    require: true,
+    required: true,
     trim: true,
   },
   treatments: {
     type: Number,
-    require: true,
+    required: true,
     trim: true,
   },
   notes: {

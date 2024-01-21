@@ -1,7 +1,6 @@
 import express from "express";
 import "./db";
 import Project, { ProjectDetailsInterface } from "./modals/Projects";
-import NewNote, { NotesInterface } from "./modals/NewNote";
 
 const app = express();
 app.use(express.json());
@@ -10,7 +9,7 @@ app.use(express.urlencoded({ extended: false }));
 app.get("/", (req, res) => {
   res.send("<h1>hello world</h1>");
 });
-
+ 
 app.post("/", (req, res) => {
   res.json({
     message: "hello",
@@ -19,18 +18,24 @@ app.post("/", (req, res) => {
 });
 
 app.post("/createNewProject", async (req, res) => {
-  await Project.create<ProjectDetailsInterface>({
-    _id: (req.body as ProjectDetailsInterface)._id,
-    projectTitle: (req.body as ProjectDetailsInterface).projectTitle,
-    location: (req.body as ProjectDetailsInterface).location,
-    replications: (req.body as ProjectDetailsInterface).replications,
-    treatments: (req.body as ProjectDetailsInterface).treatments,
-    notes: (req.body as ProjectDetailsInterface).notes,
-  });
-
-  res.json({
-    response: "New Project Created",
-  });
+  try {
+    await Project.create<ProjectDetailsInterface>({
+      projectTitle: (req.body as ProjectDetailsInterface).projectTitle,
+      location: (req.body as ProjectDetailsInterface).location,
+      replications: (req.body as ProjectDetailsInterface).replications,
+      treatments: (req.body as ProjectDetailsInterface).treatments,
+      notes: (req.body as ProjectDetailsInterface).notes,
+    });
+  
+    res.json({
+      response: "New Project Created",
+    });
+    
+  } catch (error) {
+    res.json({
+      response: error
+    })
+  }
 });
 
 app.get("/:projectId", async (req, res) => {
@@ -158,7 +163,7 @@ app.delete("/deteteProject/:projectId", async (req, res) => {
   }
 });
 
-app.delete("/deleteProject/:projectId/:noteId", async (req, res) => {
+app.delete("/deleteNote/:projectId/:noteId", async (req, res) => {
   try {
     const { noteId, projectId } = req.params;
     const project = await Project.findById(projectId);
@@ -185,9 +190,9 @@ app.delete("/deleteProject/:projectId/:noteId", async (req, res) => {
         response: "Project not found",
       });
     }
-  } catch (error: any) {
+  } catch (error) {
     res.status(500).json({
-      response: error.message,
+      response: error,
     });
   }
 });
@@ -215,12 +220,10 @@ app.patch("/editNote/:projectId/:noteId", async (req, res) => {
     }
   } catch (error) {
     res.json({
-      response: error.message,
+      response: error,
     });
   }
 });
-
-
 
 app.listen(1430, () => {
   console.log("listening");
