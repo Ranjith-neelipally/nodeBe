@@ -112,6 +112,7 @@ app.patch("/EditProjectData/:projectid/:field", async (req, response) => {
             notes: {
               $each: notes.map((note) => ({
                 noteString: note.noteString,
+                photoString:note.photoString,
               })),
             },
           },

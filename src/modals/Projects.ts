@@ -5,17 +5,21 @@ export interface ProjectDetailsInterface {
   location: string;
   replications: number;
   treatments: number;
-  notes: Array<{ noteString: string }>;
+  notes: Array<{ noteString?: string, photoString?:string }>;
 }
 
 export interface NotesInterface {
   noteString?: string | null | undefined;
+  photoString?:string|any;
 }
 
 const NotesSchema = new Schema({
   noteString: {
     type: String,
   },
+  photoString:{
+    type:String,
+  }
 });
 
 const ProjectSchema = new Schema({
