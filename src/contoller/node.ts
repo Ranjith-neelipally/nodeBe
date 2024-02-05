@@ -1,23 +1,82 @@
 import { RequestHandler } from "express";
 import Project, { ProjectDetailsInterface } from "../modals/Projects";
+import Treatments, { TreatmentDetailsInterface } from "../modals/Treatments";
 
 export const createProject: RequestHandler = async (req, res) => {
   try {
-    await Project.create<ProjectDetailsInterface>({
-      projectTitle: (req.body as ProjectDetailsInterface).projectTitle,
-      location: (req.body as ProjectDetailsInterface).location,
-      replications: (req.body as ProjectDetailsInterface).replications,
-      treatments: (req.body as ProjectDetailsInterface).treatments,
-      notes: (req.body as ProjectDetailsInterface).notes,
-    });
+    const { userMail } = req.body;
+    const existingProject = await Project.findOne({ userMail });
 
-    res.json({
-      response: "New Project Created",
+    if (!existingProject) {
+      const newProject = await Project.create<ProjectDetailsInterface>({
+        userMail: (req.body as ProjectDetailsInterface).userMail,
+        projects: (req.body as ProjectDetailsInterface).projects,
+      });
+
+      const newTreatments = await Treatments.create<TreatmentDetailsInterface>({
+        projectId: newProject.projects[0]._id,
+        treatments: (req.body.projects as TreatmentDetailsInterface).treatments,
+        replications: (req.body.projects as TreatmentDetailsInterface)
+          .replications,
+      });
+
+      return res.json({
+        response: "New Project Created",
+        newTreatments,
+        newProject,
+      });
+    } else {
+      const updatedProject =
+        await Project.findOneAndUpdate<ProjectDetailsInterface>(
+          { userMail },
+          {
+            $push: {
+              projects: (req.body as ProjectDetailsInterface).projects,
+            },
+          },
+          { new: true }
+        );
+
+      if (updatedProject && updatedProject.projects) {
+        const newTreatments =
+          await Treatments.create<TreatmentDetailsInterface>({
+            projectId: (
+              updatedProject.projects[updatedProject.projects.length - 1] as any
+            )._id,
+            treatments: (
+              updatedProject.projects[
+                updatedProject.projects.length - 1
+              ] as TreatmentDetailsInterface
+            ).treatments,
+            replications: (
+              updatedProject.projects[
+                updatedProject.projects.length - 1
+              ] as TreatmentDetailsInterface
+            ).replications,
+          });
+
+        return res.json({
+          response: "Project updated",
+          updatedProject,
+        });
+      } else {
+        return res.status(404).json({
+          response: "Project not found or missing projects data",
+        });
+      }
+    }
+  } catch (error: any) {
+    return res.status(500).json({
+      response: "Internal Server Error",
+      error: error.message,
     });
+  }
+};
+
+export const AddNotes: RequestHandler = async (req, res) => {
+  try {
   } catch (error) {
-    res.json({
-      response: error,
-    });
+    response: error;
   }
 };
 
@@ -27,6 +86,20 @@ export const FindProject: RequestHandler = async (req, res) => {
     const ProjectName = await Project.findById(projectId);
     res.json({
       response: ProjectName,
+    });
+  } catch (error) {
+    res.json({
+      response: error,
+    });
+  }
+};
+
+export const GetAllProjects: RequestHandler = async (req, res) => {
+  try {
+    const projects = await Project.find();
+
+    res.json({
+      response: projects,
     });
   } catch (error) {
     res.json({
@@ -145,4 +218,3 @@ export const EditNote: RequestHandler = async (req, res) => {
     });
   }
 };
-

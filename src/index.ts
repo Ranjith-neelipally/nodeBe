@@ -8,6 +8,8 @@ import {
   DeleteProject,
   DeleteNote,
   EditNote,
+  GetAllProjects,
+  AddNotes,
 } from "./contoller/node";
 
 const app = express();
@@ -18,9 +20,13 @@ app.get("/", (req, res) => {
   res.send("<h1>hello world</h1>");
 });
 
-app.post("/createNewProject", createProject);
+app.patch("/createNewProject", createProject);
 
-app.get("/:projectId", FindProject);
+app.patch("/AddNotes", AddNotes);
+
+app.get("/getProject/:projectId", FindProject);
+
+app.get("/getAllProjects", GetAllProjects);
 
 app.get("/getNotes/:projectid/:noteId");
 
