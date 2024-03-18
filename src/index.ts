@@ -1,6 +1,6 @@
 import express from "express";
+import 'dotenv/config'
 import "./db";
-import Project from "./modals/Projects";
 import {
   EditProjectDate,
   FindProject,
@@ -12,9 +12,13 @@ import {
   AddNotes,
 } from "./contoller/node";
 
+import authRouter from "./routers/auth";
+
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+app.use("/auth", authRouter);
 
 app.get("/", (req, res) => {
   res.send("<h1>hello world</h1>");
