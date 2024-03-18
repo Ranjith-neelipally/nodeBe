@@ -39,5 +39,5 @@ app.delete("/deleteNote/:projectId/:noteId", DeleteNote);
 app.patch("/editNote/:projectId/:noteId", EditNote);
 
 app.listen(1430, () => {
-  console.log("listening");
+  console.log("listening to port");
 });
