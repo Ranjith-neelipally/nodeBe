@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
+import { MONGO_URI } from "../utils/variables";
 
+const URI = MONGO_URI as string;
 mongoose
-  .connect(
-    "mongodb+srv://winteriscoming164:Porababu.12@cluster0.qmfowsk.mongodb.net/Research-Pal"
-  )
+  .connect(URI)
   .then(() => {
     console.log("connected to db");
   })
