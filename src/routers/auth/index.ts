@@ -8,6 +8,6 @@ const router = Router();
 
 router.post("/createUser", validate(CreateUserSchema), CreateNewUser);
 
-router.post("/verify-email", VerifyEmail)
+router.post("/verifyEmail", VerifyEmail)
 
 export default router;
