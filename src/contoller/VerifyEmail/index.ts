@@ -72,3 +72,14 @@ export const ResendVerificationEmail: RequestHandler = async (
     message: "Please check your email for verification instructions.",
   });
 };
+
+export const ForgotPassword: RequestHandler = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ error: "Account or User not found" });
+  }
+
+  
+
+};

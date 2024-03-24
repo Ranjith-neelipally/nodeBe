@@ -8,13 +8,14 @@ import { CreateNewUser } from "../../contoller/UserController/CreateNewUser";
 import {
   ResendVerificationEmail,
   VerifyEmail,
+  ForgotPassword,
 } from "../../contoller/VerifyEmail";
 
 const router = Router();
 
 router.post("/createUser", validate(CreateUserSchema), CreateNewUser);
-
 router.post("/verifyEmail", validate(EmailVerifictionBody), VerifyEmail);
 router.post("/reVerifyEmail", ResendVerificationEmail);
+router.post("/forgotPassword", ForgotPassword);
 
 export default router;

@@ -6,6 +6,7 @@ import { generateToken } from "../../../utils/helpers";
 import { sendVerificationMail } from "../../../utils/mail";
 import emailVerificationToken from "../../../modals/userVerification";
 
+
 export const CreateNewUser: RequestHandler = async (req: CreateUser, res) => {
   const { email, password, userName } = req.body;
   try {
@@ -33,3 +34,7 @@ export const CreateNewUser: RequestHandler = async (req: CreateUser, res) => {
     res.json({ error: error });
   }
 };
+
+export const PasswordResetToken : RequestHandler = async () => {
+  
+}
