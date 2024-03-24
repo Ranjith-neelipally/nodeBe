@@ -4,6 +4,7 @@ import { CreateUser } from "src/@types/user";
 import User from "../../../modals/userModal";
 import { generateToken } from "../../../utils/helpers";
 import { sendVerificationMail } from "../../../utils/mail";
+import emailVerificationToken from "../../../modals/userVerification";
 
 export const CreateNewUser: RequestHandler = async (req: CreateUser, res) => {
   const { email, password, userName } = req.body;
@@ -15,6 +16,12 @@ export const CreateNewUser: RequestHandler = async (req: CreateUser, res) => {
     });
 
     const tempToken = generateToken(6);
+
+    await emailVerificationToken.create({
+      owner: user._id,
+      token: tempToken,
+    });
+
     sendVerificationMail(tempToken, {
       email,
       name: userName,

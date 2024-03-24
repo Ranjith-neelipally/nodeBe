@@ -26,11 +26,6 @@ export const sendVerificationMail = async (token: string, profile: Profile) => {
 
   const { name, email, userId } = profile;
 
-  await emailVerificationToken.create({
-    owner: userId,
-    token: token,
-  });
-
   transport.sendMail({
     to: email,
     from: VERIFICATIONEMAIL,
