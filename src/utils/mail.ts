@@ -21,6 +21,7 @@ const generateMailTransporter = () => {
   });
   return transporter;
 };
+
 export const sendVerificationMail = async (token: string, profile: Profile) => {
   const transport = generateMailTransporter();
 
@@ -35,6 +36,31 @@ export const sendVerificationMail = async (token: string, profile: Profile) => {
       subject: "Verification Mail",
       message:
         "You are just a step away from accessing your research Pal account, We are sharing a verification code to access your account. The code is valid for 10 minutes and usable only once.",
+    }),
+  });
+};
+
+interface resetPassword {
+  email: string;
+  link: string;
+  name: string;
+}
+
+export const sendPasswordResetMail = async (options: resetPassword) => {
+  const transport = generateMailTransporter();
+
+  const { link, email } = options;
+
+  transport.sendMail({
+    to: email,
+    from: VERIFICATIONEMAIL,
+    html: Email({
+      userName: email,
+      subject: "Reset Password Link",
+      button: link,
+      message:
+        "We just recieved a request yjay you forgot your password. Click on the link and reset your password.",
+      title: "Forgot password",
     }),
   });
 };

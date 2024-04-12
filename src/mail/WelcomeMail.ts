@@ -1,9 +1,10 @@
 interface EmailOptions {
   title?: string;
   message: string;
-  Otp: string;
-  userName: string;
-  subject: string;
+  Otp?: string;
+  userName?: string;
+  subject?: string;
+  button?: string;
 }
 
 export const Email = (options: EmailOptions) => {
@@ -13,6 +14,7 @@ export const Email = (options: EmailOptions) => {
     Otp,
     userName,
     subject,
+    button,
   } = options;
   return `<!DOCTYPE html>
 <html lang="en">
@@ -42,7 +44,7 @@ export const Email = (options: EmailOptions) => {
 
         <tr>
             <td style="font-size: 14px;  color: #65738E;padding:10px 30px; line-height: 30px;">
-                ${Otp}
+                 ${Otp ? `<h1>${Otp}</h1>` : `<a href="${button}">Reset Password</a>`}
             </td>
         </tr>
         <tr>

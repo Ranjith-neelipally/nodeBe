@@ -34,7 +34,3 @@ export const CreateNewUser: RequestHandler = async (req: CreateUser, res) => {
     res.json({ error: error });
   }
 };
-
-export const PasswordResetToken : RequestHandler = async () => {
-  
-}
