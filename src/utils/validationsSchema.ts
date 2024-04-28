@@ -24,7 +24,7 @@ export const CreateUserSchema = yup.object().shape({
     .matches(PasswordvalidationExpression, "Password is too simple"),
 });
 
-export const EmailVerifictionBody = yup.object().shape({
+export const TokenAndIdValidation = yup.object().shape({
   token: yup.string().trim().required("Invalid token!"),
   userId: yup
     .string()
@@ -34,5 +34,25 @@ export const EmailVerifictionBody = yup.object().shape({
       }
       return "";
     })
+    .required("UserId is invalid or missing."),
+});
+
+export const PasswordCheckSchema = yup.object().shape({
+  token: yup.string().trim().required("Invalid token!"),
+  userId: yup
+    .string()
+    .transform(function (value) {
+      if (this.isType(value) && isValidObjectId(value)) {
+        return value;
+      }
+      return "";
+    })
+
     .required("Invalid userId"),
+  password: yup
+    .string()
+    .trim()
+    .required("Password is missing")
+    .min(8, "Password is too short!")
+    .matches(PasswordvalidationExpression, "Password is too simple"),
 });

@@ -2,12 +2,17 @@ import { Email } from "../mail/WelcomeMail";
 import { MAILTRAP_PASSWORD, MAILTRAP_USER } from "../utils/variables";
 import nodemailer from "nodemailer";
 import { VERIFICATIONEMAIL } from "./variables";
-import emailVerificationToken from "../modals/userVerification";
 
 interface Profile {
   name: string;
   email: string;
-  userId: string;
+  userId?: string;
+}
+
+interface resetPassword {
+  email: string;
+  link: string;
+  name: string;
 }
 
 const generateMailTransporter = () => {
@@ -40,12 +45,6 @@ export const sendVerificationMail = async (token: string, profile: Profile) => {
   });
 };
 
-interface resetPassword {
-  email: string;
-  link: string;
-  name: string;
-}
-
 export const sendPasswordResetMail = async (options: resetPassword) => {
   const transport = generateMailTransporter();
 
@@ -61,6 +60,23 @@ export const sendPasswordResetMail = async (options: resetPassword) => {
       message:
         "We just recieved a request yjay you forgot your password. Click on the link and reset your password.",
       title: "Forgot password",
+    }),
+  });
+};
+
+export const sendSuccessEmail = async ( profile: Profile) => {
+  const transport = generateMailTransporter();
+
+  const { name, email } = profile;
+
+  transport.sendMail({
+    to: email,
+    from: VERIFICATIONEMAIL,
+    html: Email({
+      userName: name,
+      subject: "Success Mail",
+      message:
+        "your Password has changed Successfully !",
     }),
   });
 };

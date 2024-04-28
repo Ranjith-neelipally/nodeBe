@@ -1,5 +1,5 @@
 import express from "express";
-import 'dotenv/config'
+import "dotenv/config";
 import "./db";
 import {
   EditProjectDate,
@@ -17,6 +17,8 @@ import authRouter from "./routers/auth";
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(express.static("src/public"));
+app.use(express.static("src/public/reset-password.html"));
 
 app.use("/auth", authRouter);
 

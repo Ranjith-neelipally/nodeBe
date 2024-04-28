@@ -4,24 +4,31 @@ import * as yup from "yup";
 export const validate = (schema: any): RequestHandler => {
   return async (req, res, next) => {
     if (!req.body) {
-      return res.json({ error: "Body is empty" });
+      res.status(400).json({ error: "Body is empty" });
+      return;
     }
 
-    const schemaToVadlidate = yup.object({
+    const schemaToValidate = yup.object({
       body: schema,
     });
 
     try {
-      await schemaToVadlidate.validate(
+      await schemaToValidate.validate(
         { body: req.body },
         {
-          abortEarly: true,
+          abortEarly: false,
         }
       );
       next();
     } catch (error) {
       if (error instanceof yup.ValidationError) {
-        res.json({ error: error.message });
+        res.status(422).json({ errors: error.errors });
+      } else {
+        console.error(
+          "Validation middleware encountered an unexpected error:",
+          error
+        );
+        res.status(500).json({ error: "Internal server error" });
       }
     }
   };
