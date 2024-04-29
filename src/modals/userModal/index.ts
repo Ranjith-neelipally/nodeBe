@@ -8,6 +8,7 @@ interface UserDocument {
   avatar?: { url: string };
   ProjectIds: ObjectId[];
   verified?: boolean;
+  tokens: string[];
 }
 
 interface PasswordVerificationMethod {
@@ -43,6 +44,8 @@ const userSchema = new Schema<UserDocument, {}, PasswordVerificationMethod>({
       type: Schema.Types.ObjectId,
     },
   ],
+
+  tokens: [String],
 });
 
 userSchema.pre("save", async function (next) {

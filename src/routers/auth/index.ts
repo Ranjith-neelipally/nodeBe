@@ -3,6 +3,7 @@ import {
   CreateUserSchema,
   TokenAndIdValidation,
   PasswordCheckSchema,
+  LoginValidationSchema,
 } from "../../utils/validationsSchema";
 import { validate } from "../../MiddleWare/Validator";
 import { verifyResetPasswordToken } from "../../MiddleWare/auth";
@@ -15,6 +16,7 @@ import {
 import { generateResetPasswordLink } from "../../contoller/UserController/ResetPassword";
 import { grantValid } from "../../contoller/UserController/VerifyResetToken";
 import { UpdatePassword } from "../../contoller/UserController/UpdatePassword";
+import { SignIn } from "../../contoller/UserController/SignIn";
 
 const router = Router();
 
@@ -34,5 +36,6 @@ router.post(
   verifyResetPasswordToken,
   UpdatePassword
 );
+router.post("/sign-in", validate(LoginValidationSchema), SignIn);
 
 export default router;

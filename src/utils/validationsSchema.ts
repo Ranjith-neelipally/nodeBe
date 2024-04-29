@@ -56,3 +56,17 @@ export const PasswordCheckSchema = yup.object().shape({
     .min(8, "Password is too short!")
     .matches(PasswordvalidationExpression, "Password is too simple"),
 });
+
+export const LoginValidationSchema = yup.object().shape({
+  email: yup
+    .string()
+    .trim()
+    .required("email is required")
+    .email("invalid email id!"),
+  password: yup
+    .string()
+    .trim()
+    .required("Password is missing")
+    .min(8, "Password is too short!")
+    .matches(PasswordvalidationExpression, "Password is too simple"),
+});
