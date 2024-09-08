@@ -19,8 +19,9 @@ app.use(express_1.default.static("src/public"));
 app.use(express_1.default.static("src/public/reset-password.html"));
 app.use("/auth", routers_1.AuthRouter);
 app.use("/projects", routers_1.ProjectsRouter);
+app.use(express_1.default.static(path_1.default.join(__dirname, 'public')));
 app.get("/", (req, res) => {
-    res.sendFile("index.html", { root: path_1.default.join(__dirname, "public") });
+    res.sendFile(path_1.default.join(__dirname, "dist", "index.html"));
 });
 app.patch("/createNewProject", node_1.createProject);
 app.patch("/AddNotes", node_1.AddNotes);
