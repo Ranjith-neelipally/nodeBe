@@ -28,5 +28,5 @@ app.delete("/deteteProject/:projectId", node_1.DeleteProject);
 app.delete("/deleteNote/:projectId/:noteId", node_1.DeleteNote);
 app.patch("/editNote/:projectId/:noteId", node_1.EditNote);
 app.listen(1430, () => {
-    console.log("listening to port");
+    console.log("listening to port and");
 });
