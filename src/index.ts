@@ -25,11 +25,7 @@ app.use("/auth", AuthRouter);
 app.use("/projects", ProjectsRouter)
 
 app.get("/", (req, res) => {
-  res.sendFile(
-    path.join(
-      "/Users/rajithkumarreddyneelipally/ResearchPal/nodeBe/src/Public/index.html"
-    )
-  );
+  res.sendFile(path.join("src/Public/index.html"));
 });
 
 app.patch("/createNewProject", createProject);
