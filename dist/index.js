@@ -8,6 +8,7 @@ require("dotenv/config");
 require("./db");
 const node_1 = require("./contoller/node");
 const routers_1 = require("./routers");
+const path_1 = __importDefault(require("path"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
@@ -16,7 +17,7 @@ app.use(express_1.default.static("src/public/reset-password.html"));
 app.use("/auth", routers_1.AuthRouter);
 app.use("/projects", routers_1.ProjectsRouter);
 app.get("/", (req, res) => {
-    res.send("<h1>hello world</h1>");
+    res.sendFile(path_1.default.join("/Users/rajithkumarreddyneelipally/ResearchPal/nodeBe/src/Public/index.html"));
 });
 app.patch("/createNewProject", node_1.createProject);
 app.patch("/AddNotes", node_1.AddNotes);

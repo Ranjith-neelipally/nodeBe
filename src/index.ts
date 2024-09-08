@@ -13,6 +13,7 @@ import {
 } from "./contoller/node";
 
 import {AuthRouter, ProjectsRouter} from "./routers";
+import path from "path";
 
 const app = express();
 app.use(express.json());
@@ -24,7 +25,11 @@ app.use("/auth", AuthRouter);
 app.use("/projects", ProjectsRouter)
 
 app.get("/", (req, res) => {
-  res.send("<h1>hello world</h1>");
+  res.sendFile(
+    path.join(
+      "/Users/rajithkumarreddyneelipally/ResearchPal/nodeBe/src/Public/index.html"
+    )
+  );
 });
 
 app.patch("/createNewProject", createProject);
