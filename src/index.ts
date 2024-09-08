@@ -14,12 +14,16 @@ import {
 
 import {AuthRouter, ProjectsRouter} from "./routers";
 import path from "path";
+import { IgnoreFavIcon } from "./MiddleWare/favicon";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(express.static("src/public"));
 app.use(express.static("src/public/reset-password.html"));
+
+app.use(IgnoreFavIcon);
+app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 app.use("/auth", AuthRouter);
 app.use("/projects", ProjectsRouter)
