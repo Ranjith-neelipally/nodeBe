@@ -23,7 +23,6 @@ app.use(express.static("src/public"));
 app.use(express.static("src/public/reset-password.html"));
 
 app.use(IgnoreFavIcon);
-app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 app.use("/auth", AuthRouter);
 app.use("/projects", ProjectsRouter)

@@ -16,7 +16,6 @@ app.use(express_1.default.urlencoded({ extended: false }));
 app.use(express_1.default.static("src/public"));
 app.use(express_1.default.static("src/public/reset-password.html"));
 app.use(favicon_1.IgnoreFavIcon);
-app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.use("/auth", routers_1.AuthRouter);
 app.use("/projects", routers_1.ProjectsRouter);
 app.get("/", (req, res) => {
