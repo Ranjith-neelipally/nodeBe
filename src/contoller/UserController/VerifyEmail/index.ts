@@ -1,10 +1,10 @@
 import { RequestHandler } from "express";
 
 import { VerifyEmail as VerifyEmailrequest } from "src/@types/user";
-import emailVerificationTokenDocument from "../../modals/userVerification";
-import User from "../../modals/userModal";
-import { generateToken } from "../../utils/helpers";
-import { sendVerificationMail } from "../../utils/mail";
+import emailVerificationTokenDocument from "../../../modals/userVerification";
+import User from "../../../modals/userModal";
+import { generateToken } from "../../../utils/helpers";
+import { sendVerificationMail } from "../../../utils/mail";
 
 export const VerifyEmail: RequestHandler = async (
   req: VerifyEmailrequest,
@@ -72,4 +72,3 @@ export const ResendVerificationEmail: RequestHandler = async (
     message: "Please check your email for verification instructions.",
   });
 };
-;

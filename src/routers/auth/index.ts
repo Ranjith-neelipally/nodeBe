@@ -10,47 +10,46 @@ import {
   verifyLoginToken,
   verifyResetPasswordToken,
 } from "../../MiddleWare/auth";
-import { CreateNewUser } from "../../contoller/UserController/CreateNewUser";
+
+
 import {
+  CreateNewUser,
+  GenerateResetPasswordLink,
+  Logout,
   ResendVerificationEmail,
+  SignIn,
+  UpdatePassword,
   VerifyEmail,
-} from "../../contoller/VerifyEmail";
+} from "../../contoller/UserController";
 
-import { generateResetPasswordLink } from "../../contoller/UserController/ResetPassword";
-import { grantValid } from "../../contoller/UserController/VerifyResetToken";
-import { UpdatePassword } from "../../contoller/UserController/UpdatePassword";
-import { SignIn } from "../../contoller/UserController/SignIn";
-import { Logout } from "../../contoller/UserController/Logout";
+const AuthRouter = Router();
 
-const router = Router();
+AuthRouter.post("/createUser", validate(CreateUserSchema), CreateNewUser);
+AuthRouter.post("/verifyEmail", validate(TokenAndIdValidation), VerifyEmail);
+AuthRouter.post("/reVerifyEmail", ResendVerificationEmail);
+AuthRouter.post("/forgotPassword", GenerateResetPasswordLink);
 
-router.post("/createUser", validate(CreateUserSchema), CreateNewUser);
-router.post("/verifyEmail", validate(TokenAndIdValidation), VerifyEmail);
-router.post("/reVerifyEmail", ResendVerificationEmail);
-router.post("/forgotPassword", generateResetPasswordLink);
-
-router.post(
+AuthRouter.post(
   "/verify-reset-password",
   validate(TokenAndIdValidation),
-  verifyResetPasswordToken,
-  grantValid
+  verifyResetPasswordToken
 );
 
-router.post(
+AuthRouter.post(
   "/update-password",
   validate(PasswordCheckSchema),
   verifyResetPasswordToken,
   UpdatePassword
 );
 
-router.post("/sign-in", validate(LoginValidationSchema), SignIn);
+AuthRouter.post("/sign-in", validate(LoginValidationSchema), SignIn);
 
-router.get("/is-auth", verifyLoginToken, (req, res) => {
+AuthRouter.get("/is-auth", verifyLoginToken, (req, res) => {
   res.status(200).json({
     profile: req.user,
   });
 });
 
-router.post("/log-out", verifyLoginToken, Logout)
+AuthRouter.post("/log-out", verifyLoginToken, Logout);
 
-export default router;
+export default AuthRouter;

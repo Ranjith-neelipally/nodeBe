@@ -12,7 +12,7 @@ import {
   AddNotes,
 } from "./contoller/node";
 
-import authRouter from "./routers/auth";
+import {AuthRouter, ProjectsRouter} from "./routers";
 
 const app = express();
 app.use(express.json());
@@ -20,7 +20,8 @@ app.use(express.urlencoded({ extended: false }));
 app.use(express.static("src/public"));
 app.use(express.static("src/public/reset-password.html"));
 
-app.use("/auth", authRouter);
+app.use("/auth", AuthRouter);
+app.use("/projects", ProjectsRouter)
 
 app.get("/", (req, res) => {
   res.send("<h1>hello world</h1>");

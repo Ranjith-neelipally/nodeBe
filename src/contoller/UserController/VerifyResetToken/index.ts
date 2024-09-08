@@ -22,7 +22,3 @@ export const verifyResetPasswordToken: RequestHandler = async (req, res) => {
 
   res.status(200).json({ message: "Token is valid" });
 };
-
-export const grantValid: RequestHandler = async (req, res) => {
-  res.json({ valid: true });
-};

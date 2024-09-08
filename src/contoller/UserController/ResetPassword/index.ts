@@ -5,7 +5,7 @@ import crypto from "crypto";
 import { PASSWORD_RESET_LINK } from "../../../utils/variables";
 import { sendPasswordResetMail } from "../../../utils/mail";
 
-export const generateResetPasswordLink: RequestHandler = async (req, res) => {
+export const GenerateResetPasswordLink: RequestHandler = async (req, res) => {
   const { email } = req.body;
   const user = await User.findOne({ email });
   if (!user) {
