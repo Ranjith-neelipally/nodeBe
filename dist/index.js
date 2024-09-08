@@ -20,7 +20,7 @@ app.use(express_1.default.static("src/public/reset-password.html"));
 app.use("/auth", routers_1.AuthRouter);
 app.use("/projects", routers_1.ProjectsRouter);
 app.get("/", (req, res) => {
-    res.sendFile(path_1.default.join("src/Public/index.html"));
+    res.sendFile("index.html", { root: path_1.default.join(__dirname, "public") });
 });
 app.patch("/createNewProject", node_1.createProject);
 app.patch("/AddNotes", node_1.AddNotes);

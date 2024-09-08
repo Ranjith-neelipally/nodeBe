@@ -31,7 +31,7 @@ app.use("/auth", AuthRouter);
 app.use("/projects", ProjectsRouter);
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join("src/Public/index.html"));
+  res.sendFile("index.html", { root: path.join(__dirname, "public") });
 });
 
 app.patch("/createNewProject", createProject);
