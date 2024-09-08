@@ -30,10 +30,10 @@ app.use(express.static("src/public/reset-password.html"));
 app.use("/auth", AuthRouter);
 app.use("/projects", ProjectsRouter);
 
-app.use(express.static(path.join(__dirname, 'Public')));
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
 app.patch("/createNewProject", createProject);
