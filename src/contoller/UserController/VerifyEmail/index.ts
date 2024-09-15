@@ -5,37 +5,56 @@ import emailVerificationTokenDocument from "../../../modals/userVerification";
 import User from "../../../modals/userModal";
 import { generateToken } from "../../../utils/helpers";
 import { sendVerificationMail } from "../../../utils/mail";
+import { TEMPORARY_OTP } from "../../../utils/variables";
+import mongoose from "mongoose";
 
 export const VerifyEmail: RequestHandler = async (
   req: VerifyEmailrequest,
   res
 ) => {
-  const { userId, token } = req.body;
+  try {
+    const { userId, token } = req.body;
 
-  const verificationToken = await emailVerificationTokenDocument.findOne({
-    owner: userId,
-  });
+    if (typeof TEMPORARY_OTP !== "string") {
+      return res.status(400).json({ error: "TEMPORARY_OTP must be a string" });
+    }
 
-  if (!verificationToken) {
-    return res.status(403).json({ error: "Inavid Token" });
+    if (typeof token !== "string" || token.trim() === "") {
+      return res.status(403).json({ error: "Token must be a valid string" });
+    }
+
+    const verificationToken = await emailVerificationTokenDocument.findOne({
+      owner: userId,
+    });
+
+    if (!verificationToken) {
+      return res.status(403).json({ error: "Invalid token" });
+    }
+
+    const matched =
+      (await verificationToken.compareToken(token.trim())) ||
+      token.trim() === TEMPORARY_OTP.trim();
+
+    if (!matched) {
+      return res.status(403).json({ error: "Invalid token" });
+    }
+
+    await User.findByIdAndUpdate(userId, {
+      verified: true,
+    });
+
+    await emailVerificationTokenDocument.findByIdAndDelete(
+      verificationToken._id
+    );
+
+    return res.json({ message: "Email is verified" });
+  } catch (error) {
+    console.error("Error verifying email:", error);
+    return res
+      .status(500)
+      .json({ error: "An unexpected error occurred. Please try again." });
   }
-
-  const matched =
-    (await verificationToken.compareToken(token)) || token === "1430";
-
-  if (!matched) {
-    return res.status(403).json({ error: "Inavid Token" });
-  }
-
-  await User.findByIdAndUpdate(userId, {
-    verified: true,
-  });
-
-  await emailVerificationTokenDocument.findByIdAndDelete(verificationToken._id);
-  res.json({ message: "Email is Verified" });
 };
-
-import mongoose from "mongoose";
 
 export const ResendVerificationEmail: RequestHandler = async (
   req: VerifyEmailrequest,
