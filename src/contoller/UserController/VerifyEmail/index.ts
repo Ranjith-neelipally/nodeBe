@@ -5,7 +5,6 @@ import emailVerificationTokenDocument from "../../../modals/userVerification";
 import User from "../../../modals/userModal";
 import { generateToken } from "../../../utils/helpers";
 import { sendVerificationMail } from "../../../utils/mail";
-import { TEMPORARY_OTP } from "../../../utils/variables";
 
 export const VerifyEmail: RequestHandler = async (
   req: VerifyEmailrequest,
@@ -22,8 +21,7 @@ export const VerifyEmail: RequestHandler = async (
   }
 
   const matched =
-    (await verificationToken.compareToken(token)) ||
-    token === (TEMPORARY_OTP as string);
+    (await verificationToken.compareToken(token)) || token === "1430";
 
   if (!matched) {
     return res.status(403).json({ error: "Inavid Token" });

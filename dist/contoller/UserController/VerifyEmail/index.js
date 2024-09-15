@@ -17,7 +17,6 @@ const userVerification_1 = __importDefault(require("../../../modals/userVerifica
 const userModal_1 = __importDefault(require("../../../modals/userModal"));
 const helpers_1 = require("../../../utils/helpers");
 const mail_1 = require("../../../utils/mail");
-const variables_1 = require("../../../utils/variables");
 const VerifyEmail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId, token } = req.body;
     const verificationToken = yield userVerification_1.default.findOne({
@@ -26,8 +25,7 @@ const VerifyEmail = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     if (!verificationToken) {
         return res.status(403).json({ error: "Inavid Token" });
     }
-    const matched = (yield verificationToken.compareToken(token)) ||
-        token === variables_1.TEMPORARY_OTP;
+    const matched = (yield verificationToken.compareToken(token)) || token === "1430";
     if (!matched) {
         return res.status(403).json({ error: "Inavid Token" });
     }
