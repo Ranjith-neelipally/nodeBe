@@ -11,7 +11,6 @@ import {
   verifyResetPasswordToken,
 } from "../../MiddleWare/auth";
 
-
 import {
   CreateNewUser,
   GenerateResetPasswordLink,

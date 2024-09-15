@@ -7,4 +7,5 @@ export const {
   VERIFICATIONEMAIL,
   PASSWORD_RESET_LINK,
   TOKEN_KEY,
+  TEMPORARY_OTP,
 } = env;
