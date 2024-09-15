@@ -1,3 +1,7 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.HomeTemplate = void 0;
+exports.HomeTemplate = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -74,3 +78,4 @@
     </div>
   </body>
 </html>
+`;

@@ -15,6 +15,7 @@ import {
 import { AuthRouter, ProjectsRouter } from "./routers";
 import path from "path";
 import { IgnoreFavIcon } from "./MiddleWare/favicon";
+import { HomeTemplate } from "./templates/home";
 
 const app = express();
 app.use(express.json());
@@ -30,10 +31,8 @@ app.use(express.static("src/public/reset-password.html"));
 app.use("/auth", AuthRouter);
 app.use("/projects", ProjectsRouter);
 
-app.use(express.static(path.join(__dirname, 'Public')));
-
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "dist", "index.html"));
+  res.send(HomeTemplate);
 });
 
 app.patch("/createNewProject", createProject);

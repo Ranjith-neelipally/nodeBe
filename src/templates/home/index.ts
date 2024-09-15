@@ -1,3 +1,4 @@
+export const HomeTemplate = `
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -74,3 +75,4 @@
     </div>
   </body>
 </html>
+`;
