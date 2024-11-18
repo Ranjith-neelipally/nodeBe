@@ -17,7 +17,7 @@ export const SignIn: RequestHandler = async (req: CreateUser, res) => {
         res.status(403).json({ error: "User/Password mismatch" });
       } else {
         const jwdToken = jwt.sign({ userId: user._id }, TOKEN_KEY);
-        user.tokens.push(jwdToken);
+        user.tokens = jwdToken;
         await user.save();
         res.json({
           profile: {

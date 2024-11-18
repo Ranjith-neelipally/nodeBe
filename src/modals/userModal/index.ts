@@ -8,7 +8,7 @@ interface UserDocument {
   avatar?: { url: string };
   ProjectIds: ObjectId[];
   verified?: boolean;
-  tokens: string[];
+  tokens: string;
 }
 
 interface PasswordVerificationMethod {
