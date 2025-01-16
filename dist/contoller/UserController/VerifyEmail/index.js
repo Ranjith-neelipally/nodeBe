@@ -17,26 +17,42 @@ const userVerification_1 = __importDefault(require("../../../modals/userVerifica
 const userModal_1 = __importDefault(require("../../../modals/userModal"));
 const helpers_1 = require("../../../utils/helpers");
 const mail_1 = require("../../../utils/mail");
+const variables_1 = require("../../../utils/variables");
+const mongoose_1 = __importDefault(require("mongoose"));
 const VerifyEmail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId, token } = req.body;
-    const verificationToken = yield userVerification_1.default.findOne({
-        owner: userId,
-    });
-    if (!verificationToken) {
-        return res.status(403).json({ error: "Inavid Token" });
+    try {
+        const { userId, token } = req.body;
+        if (typeof variables_1.TEMPORARY_OTP !== "string") {
+            return res.status(400).json({ error: "TEMPORARY_OTP must be a string" });
+        }
+        if (typeof token !== "string" || token.trim() === "") {
+            return res.status(403).json({ error: "Token must be a valid string" });
+        }
+        const verificationToken = yield userVerification_1.default.findOne({
+            owner: userId,
+        });
+        if (!verificationToken) {
+            return res.status(403).json({ error: "Invalid token" });
+        }
+        const matched = (yield verificationToken.compareToken(token.trim())) ||
+            token.trim() === variables_1.TEMPORARY_OTP.trim();
+        if (!matched) {
+            return res.status(403).json({ error: "Invalid token" });
+        }
+        yield userModal_1.default.findByIdAndUpdate(userId, {
+            verified: true,
+        });
+        yield userVerification_1.default.findByIdAndDelete(verificationToken._id);
+        return res.json({ message: "Email is verified" });
     }
-    const matched = (yield verificationToken.compareToken(token)) || token === "1430";
-    if (!matched) {
-        return res.status(403).json({ error: "Inavid Token" });
+    catch (error) {
+        console.error("Error verifying email:", error);
+        return res
+            .status(500)
+            .json({ error: "An unexpected error occurred. Please try again." });
     }
-    yield userModal_1.default.findByIdAndUpdate(userId, {
-        verified: true,
-    });
-    yield userVerification_1.default.findByIdAndDelete(verificationToken._id);
-    res.json({ message: "Email is Verified" });
 });
 exports.VerifyEmail = VerifyEmail;
-const mongoose_1 = __importDefault(require("mongoose"));
 const ResendVerificationEmail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.body;
     if (!mongoose_1.default.isValidObjectId(userId)) {
