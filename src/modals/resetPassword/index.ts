@@ -1,5 +1,5 @@
 import { Model, ObjectId, Schema, model } from "mongoose";
-import { hash, compare } from "bcrypt";
+import { hash, compare } from "bcryptjs";
 
 interface passwordresetTokenDocument {
   owner: ObjectId;
