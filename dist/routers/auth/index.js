@@ -13,10 +13,5 @@ AuthRouter.post("/forgotPassword", UserController_1.GenerateResetPasswordLink);
 AuthRouter.post("/verify-reset-password", (0, Validator_1.validate)(validationsSchema_1.TokenAndIdValidation), auth_1.verifyResetPasswordToken);
 AuthRouter.post("/update-password", (0, Validator_1.validate)(validationsSchema_1.PasswordCheckSchema), auth_1.verifyResetPasswordToken, UserController_1.UpdatePassword);
 AuthRouter.post("/sign-in", (0, Validator_1.validate)(validationsSchema_1.LoginValidationSchema), UserController_1.SignIn);
-AuthRouter.get("/is-auth", auth_1.verifyLoginToken, (req, res) => {
-    res.status(200).json({
-        profile: req.user,
-    });
-});
 AuthRouter.post("/log-out", auth_1.verifyLoginToken, UserController_1.Logout);
 exports.default = AuthRouter;

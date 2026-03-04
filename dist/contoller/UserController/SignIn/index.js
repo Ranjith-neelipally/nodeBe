@@ -38,6 +38,7 @@ const SignIn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                         name: user.userName,
                         verified: user.verified,
                         projects: user.ProjectIds,
+                        email: user.email,
                     },
                     token: jwdToken,
                 });

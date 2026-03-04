@@ -15,10 +15,6 @@ export const VerifyEmail: RequestHandler = async (
   try {
     const { userId, token } = req.body;
 
-    if (typeof TEMPORARY_OTP !== "string") {
-      return res.status(400).json({ error: "TEMPORARY_OTP must be a string" });
-    }
-
     if (typeof token !== "string" || token.trim() === "") {
       return res.status(403).json({ error: "Token must be a valid string" });
     }

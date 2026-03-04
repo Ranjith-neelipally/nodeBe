@@ -46,27 +46,28 @@ exports.validate = void 0;
 const yup = __importStar(require("yup"));
 const validate = (schema) => {
     return (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-        if (!req.body) {
-            res.status(400).json({ error: "Body is empty" });
-            return;
+        const data = Object.keys(req.body || {}).length > 0
+            ? req.body
+            : Object.keys(req.query || {}).length > 0
+                ? req.query
+                : req.params;
+        if (!data || Object.keys(data).length === 0) {
+            return res.status(400).json({ error: "Request data is empty" });
         }
         const schemaToValidate = yup.object({
-            body: schema,
+            data: schema,
         });
         try {
-            yield schemaToValidate.validate({ body: req.body }, {
-                abortEarly: false,
-            });
+            yield schemaToValidate.validate({ data }, { abortEarly: false });
+            req.body = data;
             next();
         }
         catch (error) {
             if (error instanceof yup.ValidationError) {
-                res.status(422).json({ errors: error.errors });
+                return res.status(422).json({ errors: error.errors });
             }
-            else {
-                console.error("Validation middleware encountered an unexpected error:", error);
-                res.status(500).json({ error: "Internal server error" });
-            }
+            console.error("Validation error:", error);
+            return res.status(500).json({ error: "Internal server error" });
         }
     });
 };

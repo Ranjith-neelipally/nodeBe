@@ -1,0 +1,97 @@
+import { RequestHandler } from "express";
+import { Plot } from "src/@types/Projects";
+import { Projects } from "../../../modals/Projects/index";
+import { Plots } from "../../../modals/Projects/Plots";
+
+export const CreatePlots: RequestHandler = async (req, res) => {
+  const { projectId, userId, plots } = req.body;
+  if (!Array.isArray(plots) || plots.length === 0) {
+    return res.status(400).json({ error: "No plots provided" });
+  }
+
+  try {
+    const project = await Projects.findById(projectId);
+    if (!project || project.userId.toString() !== userId) {
+      return res.status(404).json({ error: "Project not found!" });
+    }
+
+    // Fetch all existing plots for this project only
+    const existingPlots = await Plots.find({ projectId });
+    const existingTitles = new Set(existingPlots.map((p: any) => p.title));
+    const existingIndexes = new Set(
+      existingPlots.map((p: any) => JSON.stringify(p.plotIndex))
+    );
+
+    // Check for duplicates in the incoming batch (within the batch only)
+    const batchTitles = new Set();
+    const batchIndexes = new Set();
+    for (const plot of plots) {
+      // Uniqueness within the batch
+      if (batchTitles.has(plot.title)) {
+        return res
+          .status(400)
+          .json({ error: `Duplicate plot title in request: ${plot.title}` });
+      }
+      if (batchIndexes.has(JSON.stringify(plot.plotIndex))) {
+        return res.status(400).json({
+          error: `Duplicate plotIndex in request: [${plot.plotIndex}]`,
+        });
+      }
+      batchTitles.add(plot.title);
+      batchIndexes.add(JSON.stringify(plot.plotIndex));
+
+      // Uniqueness against DB (within the same project only)
+      if (existingTitles.has(plot.title)) {
+        return res.status(400).json({
+          error: `Plot title must be unique within this project: ${plot.title}`,
+        });
+      }
+      if (existingIndexes.has(JSON.stringify(plot.plotIndex))) {
+        return res.status(400).json({
+          error: `plotIndex must be unique within this project: [${plot.plotIndex}]`,
+        });
+      }
+
+      // Replication/treatment bounds
+      if (
+        project.replicationsCount < plot.replication ||
+        project.treatmentsCount < plot.treatment
+      ) {
+        return res.status(400).json({
+          error: `Invalid ${
+            project.replicationsCount < plot.replication
+              ? "replication"
+              : "treatment"
+          } number for plot: ${plot.title} ${
+            project.replicationsCount < plot.replication
+              ? `(max ${project.replicationsCount})`
+              : `(max ${project.treatmentsCount})`
+          }`,
+        });
+      }
+    }
+
+    // Add projectId and userId to each plot
+    const plotsToInsert = plots.map((plot: any) => ({
+      ...plot,
+      projectId,
+      userId,
+    }));
+
+    // Bulk create
+    const createdPlots = await Plots.insertMany(plotsToInsert);
+    res.status(201).json({ plots: createdPlots });
+  } catch (error) {
+    let errorMessage = "Unknown error";
+    if (error && typeof error === "object" && "message" in error) {
+      errorMessage = (error as any).message;
+    } else if (typeof error === "string") {
+      errorMessage = error;
+    } else {
+      try {
+        errorMessage = JSON.stringify(error);
+      } catch {}
+    }
+    res.status(500).json({ error: errorMessage, data: req.body });
+  }
+};

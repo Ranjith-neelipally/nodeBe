@@ -25,6 +25,7 @@ export const SignIn: RequestHandler = async (req: CreateUser, res) => {
             name: user.userName,
             verified: user.verified,
             projects: user.ProjectIds,
+            email: user.email,
           },
           token: jwdToken,
         });

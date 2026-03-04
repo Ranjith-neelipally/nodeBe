@@ -3,33 +3,35 @@ import * as yup from "yup";
 
 export const validate = (schema: any): RequestHandler => {
   return async (req, res, next) => {
-    if (!req.body) {
-      res.status(400).json({ error: "Body is empty" });
-      return;
+    const data =
+      Object.keys(req.body || {}).length > 0
+        ? req.body
+        : Object.keys(req.query || {}).length > 0
+        ? req.query
+        : req.params;
+
+    if (!data || Object.keys(data).length === 0) {
+      return res.status(400).json({ error: "Request data is empty" });
     }
 
     const schemaToValidate = yup.object({
-      body: schema,
+      data: schema,
     });
 
     try {
-      await schemaToValidate.validate(
-        { body: req.body },
-        {
-          abortEarly: false,
-        }
-      );
+      await schemaToValidate.validate({ data }, { abortEarly: false });
+
+      // normalize for downstream middlewares/controllers
+      req.body = data;
+
       next();
     } catch (error) {
       if (error instanceof yup.ValidationError) {
-        res.status(422).json({ errors: error.errors });
-      } else {
-        console.error(
-          "Validation middleware encountered an unexpected error:",
-          error
-        );
-        res.status(500).json({ error: "Internal server error" });
+        return res.status(422).json({ errors: error.errors });
       }
+
+      console.error("Validation error:", error);
+      return res.status(500).json({ error: "Internal server error" });
     }
   };
 };

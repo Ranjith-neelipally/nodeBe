@@ -1,0 +1,12 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const Ideas_1 = require("../../contoller/Ideas");
+const Validator_1 = require("../../MiddleWare/Validator");
+const validationsSchema_1 = require("../../utils/validationsSchema");
+const IdeasRouter = (0, express_1.Router)();
+IdeasRouter.post("", (0, Validator_1.validate)(validationsSchema_1.CreateIdeaSchema), Ideas_1.CreateNewIdea);
+IdeasRouter.patch("", (0, Validator_1.validate)(validationsSchema_1.editIdeaSchema), Ideas_1.EditIdea);
+IdeasRouter.get("", (0, Validator_1.validate)(validationsSchema_1.GetIdeaSchema), Ideas_1.GetIdea);
+IdeasRouter.delete("", (0, Validator_1.validate)(validationsSchema_1.DeleteIdeaSchema), Ideas_1.DeleteIdea);
+exports.default = IdeasRouter;

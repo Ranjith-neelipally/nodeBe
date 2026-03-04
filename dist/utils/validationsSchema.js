@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.LoginValidationSchema = exports.PasswordCheckSchema = exports.TokenAndIdValidation = exports.CreateUserSchema = void 0;
+exports.DeleteIdeaSchema = exports.GetIdeaSchema = exports.editIdeaSchema = exports.CreateIdeaSchema = exports.LoginValidationSchema = exports.PasswordCheckSchema = exports.TokenAndIdValidation = exports.CreateUserSchema = void 0;
 const yup = __importStar(require("yup"));
 const mongoose_1 = require("mongoose");
 const PasswordvalidationExpression = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#\$%\^&\*])[a-zA-Z\d!@#\$%\^&\*]{8,}$/;
@@ -98,4 +98,85 @@ exports.LoginValidationSchema = yup.object().shape({
         .required("Password is missing")
         .min(8, "Password is too short!")
         .matches(PasswordvalidationExpression, "Password is too simple"),
+});
+exports.CreateIdeaSchema = yup.object().shape({
+    userId: yup
+        .string()
+        .transform(function (value) {
+        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
+            return value;
+        }
+        return "";
+    })
+        .required("UserId is invalid or missing."),
+    idea: yup
+        .string()
+        .trim()
+        .required("Idea content is required")
+        .max(1000, "Idea is too long"),
+    date: yup.date().required("Date is required"),
+});
+exports.editIdeaSchema = yup.object().shape({
+    _id: yup
+        .string()
+        .transform(function (value) {
+        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
+            return value;
+        }
+        return "";
+    })
+        .required("Idea id is invalid or missing."),
+    userId: yup
+        .string()
+        .transform(function (value) {
+        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
+            return value;
+        }
+        return "";
+    })
+        .required("UserId is invalid or missing."),
+    idea: yup
+        .string()
+        .trim()
+        .required("Idea content is required")
+        .max(1000, "Idea is too long"),
+    date: yup.date().notRequired(),
+});
+exports.GetIdeaSchema = yup.object().shape({
+    userId: yup
+        .string()
+        .transform(function (value) {
+        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
+            return value;
+        }
+        return "";
+    })
+        .required("UserId is invalid or missing."),
+    date: yup.date().notRequired(),
+    limit: yup
+        .number()
+        .min(1, "Limit must be at least 1.")
+        .max(100, "Limit cannot exceed 100.")
+        .notRequired(),
+    page: yup.number().min(1, "Page must be at least 1.").notRequired(),
+});
+exports.DeleteIdeaSchema = yup.object().shape({
+    _id: yup
+        .string()
+        .transform(function (value) {
+        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
+            return value;
+        }
+        return "";
+    })
+        .required("Idea id is invalid or missing."),
+    userId: yup
+        .string()
+        .transform(function (value) {
+        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
+            return value;
+        }
+        return "";
+    })
+        .required("UserId is invalid or missing."),
 });

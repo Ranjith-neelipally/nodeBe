@@ -43,12 +43,6 @@ AuthRouter.post(
 
 AuthRouter.post("/sign-in", validate(LoginValidationSchema), SignIn);
 
-AuthRouter.get("/is-auth", verifyLoginToken, (req, res) => {
-  res.status(200).json({
-    profile: req.user,
-  });
-});
-
 AuthRouter.post("/log-out", verifyLoginToken, Logout);
 
 export default AuthRouter;

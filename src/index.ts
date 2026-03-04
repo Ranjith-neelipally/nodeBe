@@ -2,24 +2,24 @@ import express from "express";
 import "dotenv/config";
 import "./db";
 import {
-  EditProjectDate,
-  FindProject,
-  createProject,
-  DeleteProject,
-  DeleteNote,
-  EditNote,
-  GetAllProjects,
-  AddNotes,
-} from "./contoller/node";
-
-import { AuthRouter, ProjectsRouter } from "./routers";
-import path from "path";
+  AuthRouter,
+  ProjectsRouter,
+  IdeasRouter,
+  PhotosRouter,
+  RefreshModalsRouter,
+} from "./routers";
 import { IgnoreFavIcon } from "./MiddleWare/favicon";
 import { HomeTemplate } from "./templates/home";
+import { ValidateUserMiddleware } from "./MiddleWare/user";
+import { verifyLoginToken } from "./MiddleWare/auth";
+import { requestContextMiddleware } from "./MiddleWare/requestContext";
+import { globalErrorHandler, setupProcessErrorHandlers } from "./MiddleWare/errorHandler";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+app.use(requestContextMiddleware);
 
 app.use(IgnoreFavIcon);
 
@@ -28,30 +28,19 @@ app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.use(express.static("src/public"));
 app.use(express.static("src/public/reset-password.html"));
 
-app.use("/auth", AuthRouter);
-app.use("/projects", ProjectsRouter);
-
 app.get("/", (req, res) => {
   res.send(HomeTemplate);
 });
 
-app.patch("/createNewProject", createProject);
+app.use("/auth", AuthRouter);
+app.use("/projects", ValidateUserMiddleware, verifyLoginToken, ProjectsRouter);
+app.use("/ideas", ValidateUserMiddleware, verifyLoginToken, IdeasRouter);
+app.use("/photos", ValidateUserMiddleware, verifyLoginToken, PhotosRouter);
+app.use("/admin", RefreshModalsRouter);
 
-app.patch("/AddNotes", AddNotes);
+app.use(globalErrorHandler);
 
-app.get("/getProject/:projectId", FindProject);
-
-app.get("/getAllProjects", GetAllProjects);
-
-app.get("/getNotes/:projectid/:noteId");
-
-app.patch("/EditProjectData/:projectid/:field", EditProjectDate);
-
-app.delete("/deteteProject/:projectId", DeleteProject);
-
-app.delete("/deleteNote/:projectId/:noteId", DeleteNote);
-
-app.patch("/editNote/:projectId/:noteId", EditNote);
+setupProcessErrorHandlers();
 
 app.listen(1430, () => {
   console.log("listening to port and");

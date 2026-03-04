@@ -70,3 +70,88 @@ export const LoginValidationSchema = yup.object().shape({
     .min(8, "Password is too short!")
     .matches(PasswordvalidationExpression, "Password is too simple"),
 });
+
+export const CreateIdeaSchema = yup.object().shape({
+  userId: yup
+    .string()
+    .transform(function (value) {
+      if (this.isType(value) && isValidObjectId(value)) {
+        return value;
+      }
+      return "";
+    })
+    .required("UserId is invalid or missing."),
+  idea: yup
+    .string()
+    .trim()
+    .required("Idea content is required")
+    .max(1000, "Idea is too long"),
+  date: yup.date().required("Date is required"),
+});
+
+export const editIdeaSchema = yup.object().shape({
+  _id: yup
+    .string()
+    .transform(function (value) {
+      if (this.isType(value) && isValidObjectId(value)) {
+        return value;
+      }
+      return "";
+    })
+    .required("Idea id is invalid or missing."),
+  userId: yup
+    .string()
+    .transform(function (value) {
+      if (this.isType(value) && isValidObjectId(value)) {
+        return value;
+      }
+      return "";
+    })
+    .required("UserId is invalid or missing."),
+  idea: yup
+    .string()
+    .trim()
+    .required("Idea content is required")
+    .max(1000, "Idea is too long"),
+  date: yup.date().notRequired(),
+});
+
+export const GetIdeaSchema = yup.object().shape({
+  userId: yup
+    .string()
+    .transform(function (value) {
+      if (this.isType(value) && isValidObjectId(value)) {
+        return value;
+      }
+      return "";
+    })
+    .required("UserId is invalid or missing."),
+  date: yup.date().notRequired(),
+  limit: yup
+    .number()
+    .min(1, "Limit must be at least 1.")
+    .max(100, "Limit cannot exceed 100.")
+    .notRequired(),
+  page: yup.number().min(1, "Page must be at least 1.").notRequired(),
+});
+
+export const DeleteIdeaSchema = yup.object().shape({
+  _id: yup
+    .string()
+    .transform(function (value) {
+      if (this.isType(value) && isValidObjectId(value)) {
+        return value;
+      }
+      return "";
+    })
+    .required("Idea id is invalid or missing."),
+  userId: yup
+    .string()
+    .transform(function (value) {
+      if (this.isType(value) && isValidObjectId(value)) {
+        return value;
+      }
+      return "";
+    })
+    .required("UserId is invalid or missing."),
+});

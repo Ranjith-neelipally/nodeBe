@@ -1,3 +1,4 @@
+import User from "../modals/userModal";
 export const generateToken = (length: number): string => {
   let token: string = "";
   const digits = "0123456789";
