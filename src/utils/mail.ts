@@ -1,5 +1,5 @@
 import { Email } from "../mail/WelcomeMail";
-import { MAILTRAP_PASSWORD, MAILTRAP_USER } from "../utils/variables";
+import { GMAIL_USER, GMAIL_PASS } from "../utils/variables";
 import nodemailer from "nodemailer";
 import { VERIFICATIONEMAIL } from "./variables";
 
@@ -17,11 +17,10 @@ interface resetPassword {
 
 const generateMailTransporter = () => {
   const transporter = nodemailer.createTransport({
-    host: "sandbox.smtp.mailtrap.io",
-    port: 2525,
+    service: "gmail",
     auth: {
-      user: MAILTRAP_USER,
-      pass: MAILTRAP_PASSWORD,
+      user: GMAIL_USER,
+      pass: GMAIL_PASS,
     },
   });
   return transporter;

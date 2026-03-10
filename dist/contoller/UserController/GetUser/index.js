@@ -12,21 +12,27 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.Logout = void 0;
+exports.GetUser = void 0;
 const userModal_1 = __importDefault(require("../../../modals/userModal"));
-const Logout = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { fromAll } = req.query;
-    const token = req.token;
-    const user = yield userModal_1.default.findById(req.user.id);
-    if (!user)
-        throw new Error("Something went wrong, User not found");
-    if (fromAll === "yes") {
-        user.tokens = [];
+const GetUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const user = yield userModal_1.default.findById(req.user.id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+        res.status(200).json({
+            profile: {
+                id: user._id,
+                name: user.userName,
+                verified: user.verified,
+                projects: user.ProjectIds,
+                email: user.email,
+                createdAt: user.createdAt || user._id.getTimestamp(),
+            },
+        });
     }
-    else {
-        user.tokens = user.tokens.filter((t) => t !== token);
+    catch (error) {
+        res.status(500).json({ error: "Internal server error" });
     }
-    yield user.save();
-    res.status(200).json({ message: "Logout successful" });
 });
-exports.Logout = Logout;
+exports.GetUser = GetUser;

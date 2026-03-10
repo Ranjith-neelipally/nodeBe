@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { Notes } from "../../modals/Projects/Notes";
+import { PlotNotes } from "../../modals/Projects/Notes";
 import User from "../../modals/userModal";
 import { Projects } from "../../modals/Projects";
 import { Plots } from "../../modals/Projects/Plots";
@@ -8,7 +8,7 @@ export const GetPhotoDetails: RequestHandler = async (req, res) => {
   const { userId, photoId } = req.query as { userId: string; photoId: string };
 
   try {
-    const Note = await Notes.findOne({ userId, photoIds: photoId });
+    const Note = await PlotNotes.findOne({ userId, "content.photoIds": photoId });
     if (!Note) {
       return res.status(404).json({ error: "Photo not found!" });
     }
@@ -30,5 +30,5 @@ export const GetPhotoDetails: RequestHandler = async (req, res) => {
       ProjectTitle: project?.title,
     };
     return res.status(200).json(response);
-  } catch (error) {}
+  } catch (error) { }
 };

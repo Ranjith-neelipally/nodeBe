@@ -1,17 +1,19 @@
 import { RequestHandler } from "express";
-import { Notes } from "../../../modals/Projects/Notes";
+import { PlotNotes } from "../../../modals/Projects/Notes";
 
 export const GetAllPhotos: RequestHandler = async (req, res, next) => {
   const { userId } = req.query as { userId: string };
 
   try {
-    const notesWithPhotos = await Notes.find({
+    const notesWithPhotos = await PlotNotes.find({
       userId,
     });
 
     const allPhotoIds: string[] = [];
-    notesWithPhotos.forEach((note) => {
-      allPhotoIds.push(...note.photoIds);
+    notesWithPhotos.forEach((note: any) => {
+      note.content.forEach((item: any) => {
+        allPhotoIds.push(...item.photoIds);
+      });
     });
 
     return res.status(200).json({ allPhotoIds });

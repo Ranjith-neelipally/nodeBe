@@ -36,7 +36,7 @@ const modalUpdates = [
         update: {},
     },
     {
-        model: Notes_1.Notes,
+        model: Notes_1.PlotNotes,
         update: { photoIds: [] },
     },
     {

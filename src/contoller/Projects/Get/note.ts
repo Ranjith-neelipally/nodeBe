@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import { Notes } from "../../../modals/Projects/Notes";
+import { PlotNotes } from "../../../modals/Projects/Notes";
 
 export const GetNotes: RequestHandler = async (req, res) => {
   const { userId, projectId, plotId } = req.query as {
@@ -9,7 +9,7 @@ export const GetNotes: RequestHandler = async (req, res) => {
   };
 
   try {
-    const notes = await Notes.findOne({
+    const notes = await PlotNotes.findOne({
       userId: userId,
       projectId: projectId,
       plotId: plotId,

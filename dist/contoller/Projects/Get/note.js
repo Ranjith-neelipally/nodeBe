@@ -14,7 +14,7 @@ const Notes_1 = require("../../../modals/Projects/Notes");
 const GetNotes = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId, projectId, plotId } = req.query;
     try {
-        const notes = yield Notes_1.Notes.findOne({
+        const notes = yield Notes_1.PlotNotes.findOne({
             userId: userId,
             projectId: projectId,
             plotId: plotId,

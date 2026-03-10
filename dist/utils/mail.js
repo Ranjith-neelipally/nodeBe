@@ -19,11 +19,10 @@ const nodemailer_1 = __importDefault(require("nodemailer"));
 const variables_2 = require("./variables");
 const generateMailTransporter = () => {
     const transporter = nodemailer_1.default.createTransport({
-        host: "sandbox.smtp.mailtrap.io",
-        port: 2525,
+        service: "gmail",
         auth: {
-            user: variables_1.MAILTRAP_USER,
-            pass: variables_1.MAILTRAP_PASSWORD,
+            user: variables_1.GMAIL_USER,
+            pass: variables_1.GMAIL_PASS,
         },
     });
     return transporter;

@@ -11,9 +11,12 @@ const favicon_1 = require("./MiddleWare/favicon");
 const home_1 = require("./templates/home");
 const user_1 = require("./MiddleWare/user");
 const auth_1 = require("./MiddleWare/auth");
+const requestContext_1 = require("./MiddleWare/requestContext");
+const errorHandler_1 = require("./MiddleWare/errorHandler");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.use(express_1.default.urlencoded({ extended: false }));
+app.use(requestContext_1.requestContextMiddleware);
 app.use(favicon_1.IgnoreFavIcon);
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.use(express_1.default.static("src/public"));
@@ -26,6 +29,8 @@ app.use("/projects", user_1.ValidateUserMiddleware, auth_1.verifyLoginToken, rou
 app.use("/ideas", user_1.ValidateUserMiddleware, auth_1.verifyLoginToken, routers_1.IdeasRouter);
 app.use("/photos", user_1.ValidateUserMiddleware, auth_1.verifyLoginToken, routers_1.PhotosRouter);
 app.use("/admin", routers_1.RefreshModalsRouter);
+app.use(errorHandler_1.globalErrorHandler);
+(0, errorHandler_1.setupProcessErrorHandlers)();
 app.listen(1430, () => {
     console.log("listening to port and");
 });

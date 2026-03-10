@@ -1,11 +1,11 @@
 import { RequestHandler } from "express";
-import { Note } from "src/@types/Projects";
+
 import { PlotNotes } from "../../../modals/Projects/Notes";
 import { Plots } from "../../../modals/Projects/Plots";
 
-export const CreateNote: RequestHandler = async (req: Note, res) => {
+export const CreateNote: RequestHandler = async (req, res) => {
   try {
-    const { projectId, plotId, userId, content } = req.body;
+    let { projectId, plotId, userId, content, photoIds } = req.body;
 
     const validPlot = await Plots.findOne({
       _id: plotId,
@@ -18,12 +18,29 @@ export const CreateNote: RequestHandler = async (req: Note, res) => {
         .json({ error: "Invalid plot for the specified project." });
     }
 
-    const doc = await PlotNotes.create({
-      projectId,
-      plotId,
-      userId,
-      content,
-    });
+    let formattedContent: any[] = [];
+    if (Array.isArray(content)) {
+      formattedContent = content.map((noteText, idx) => ({
+        note: noteText,
+        photoIds: idx === 0 && Array.isArray(photoIds) ? photoIds : []
+      }));
+    } else if (typeof content === "string") {
+      formattedContent = [{ note: content, photoIds: Array.isArray(photoIds) ? photoIds : [] }];
+    }
+
+    let doc = await PlotNotes.findOne({ projectId, plotId, userId });
+
+    if (doc) {
+      doc.content.push(...formattedContent);
+      await doc.save();
+    } else {
+      doc = await PlotNotes.create({
+        projectId,
+        plotId,
+        userId,
+        content: formattedContent,
+      });
+    }
 
     res.json(doc);
   } catch (err) {

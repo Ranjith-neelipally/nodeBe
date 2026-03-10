@@ -5,7 +5,7 @@ import { CreateUser } from "src/@types/user";
 import User from "../../../modals/userModal";
 import { TOKEN_KEY } from "../../../utils/variables";
 
-export const Logout: RequestHandler = async (req: CreateUser, res) => {
+export const Logout: RequestHandler = async (req, res) => {
   const { fromAll } = req.query;
   const token = req.token;
   const user = await User.findById(req.user.id);
@@ -17,5 +17,5 @@ export const Logout: RequestHandler = async (req: CreateUser, res) => {
     user.tokens = user.tokens.filter((t) => t !== token);
   }
   await user.save();
-  res.status(200).json({ messase: "done" });
+  res.status(200).json({ message: "Logout successful" });
 };

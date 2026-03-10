@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { Projects } from "../modals/Projects";
 import { Plots } from "../modals/Projects/Plots";
-import { Notes } from "../modals/Projects/Notes";
+import { PlotNotes } from "../modals/Projects/Notes";
 import Ideas from "../modals/Idea";
 import User from "../modals/userModal";
 import PasswordResetTokenDocument from "../modals/resetPassword";
@@ -24,7 +24,7 @@ const modalUpdates = [
     update: {},
   },
   {
-    model: Notes,
+    model: PlotNotes,
     update: { photoIds: [] },
   },
   {

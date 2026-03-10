@@ -16,7 +16,7 @@ const Plots_1 = require("../../modals/Projects/Plots");
 const GetPhotoDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId, photoId } = req.query;
     try {
-        const Note = yield Notes_1.Notes.findOne({ userId, photoIds: photoId });
+        const Note = yield Notes_1.PlotNotes.findOne({ userId, "content.photoIds": photoId });
         if (!Note) {
             return res.status(404).json({ error: "Photo not found!" });
         }

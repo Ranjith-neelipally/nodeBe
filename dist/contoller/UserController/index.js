@@ -1,10 +1,12 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdatePassword = exports.verifyResetPasswordToken = exports.VerifyEmail = exports.SignIn = exports.ResendVerificationEmail = exports.GenerateResetPasswordLink = exports.Logout = exports.CreateNewUser = void 0;
+exports.UpdatePassword = exports.verifyResetPasswordToken = exports.VerifyEmail = exports.SignIn = exports.ResendVerificationEmail = exports.GenerateResetPasswordLink = exports.GetUser = exports.Logout = exports.CreateNewUser = void 0;
 const CreateNewUser_1 = require("./CreateNewUser");
 Object.defineProperty(exports, "CreateNewUser", { enumerable: true, get: function () { return CreateNewUser_1.CreateNewUser; } });
 const Logout_1 = require("./Logout");
 Object.defineProperty(exports, "Logout", { enumerable: true, get: function () { return Logout_1.Logout; } });
+const GetUser_1 = require("./GetUser");
+Object.defineProperty(exports, "GetUser", { enumerable: true, get: function () { return GetUser_1.GetUser; } });
 const VerifyEmail_1 = require("./VerifyEmail");
 Object.defineProperty(exports, "ResendVerificationEmail", { enumerable: true, get: function () { return VerifyEmail_1.ResendVerificationEmail; } });
 const VerifyResetToken_1 = require("./VerifyResetToken");

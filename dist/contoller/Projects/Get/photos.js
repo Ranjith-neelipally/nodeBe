@@ -14,12 +14,14 @@ const Notes_1 = require("../../../modals/Projects/Notes");
 const GetAllPhotos = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.query;
     try {
-        const notesWithPhotos = yield Notes_1.Notes.find({
+        const notesWithPhotos = yield Notes_1.PlotNotes.find({
             userId,
         });
         const allPhotoIds = [];
         notesWithPhotos.forEach((note) => {
-            allPhotoIds.push(...note.photoIds);
+            note.content.forEach((item) => {
+                allPhotoIds.push(...item.photoIds);
+            });
         });
         return res.status(200).json({ allPhotoIds });
     }

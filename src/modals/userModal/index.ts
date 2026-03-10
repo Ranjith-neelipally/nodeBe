@@ -9,6 +9,8 @@ interface UserDocument {
   ProjectIds: ObjectId[];
   verified?: boolean;
   tokens: string[];
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 interface PasswordVerificationMethod {
@@ -46,7 +48,7 @@ const userSchema = new Schema<UserDocument, {}, PasswordVerificationMethod>({
   ],
 
   tokens: [String],
-});
+}, { timestamps: true });
 
 userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {

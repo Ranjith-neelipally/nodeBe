@@ -15,6 +15,7 @@ import {
   CreateNewUser,
   GenerateResetPasswordLink,
   Logout,
+  GetUser,
   ResendVerificationEmail,
   SignIn,
   UpdatePassword,
@@ -23,7 +24,9 @@ import {
 
 const AuthRouter = Router();
 
-AuthRouter.post("/createUser", validate(CreateUserSchema), CreateNewUser);
+AuthRouter.get("/get-user", verifyLoginToken, GetUser);
+
+AuthRouter.post("/sign-up", validate(CreateUserSchema), CreateNewUser);
 AuthRouter.post("/verifyEmail", validate(TokenAndIdValidation), VerifyEmail);
 AuthRouter.post("/reVerifyEmail", ResendVerificationEmail);
 AuthRouter.post("/forgotPassword", GenerateResetPasswordLink);

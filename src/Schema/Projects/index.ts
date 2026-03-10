@@ -82,7 +82,7 @@ export const CreatePlotSchema = yup.object().shape({
           .required("plotIndex is required"),
       }),
     )
-    .min(1, "At least one plot is required")
+    .min(4, "At least 4 plots (e.g. 2x2 matrix) are required")
     .required("Plots array is required"),
 });
 
@@ -153,17 +153,10 @@ export const CreateNoteSchema = yup.object().shape({
 
   content: yup
     .array()
-    .of(
-      yup.object({
-        note: yup
-          .string()
-          .trim()
-          .max(2000, "Note content is too long")
-          .notRequired(),
-        photoIds: yup.array().of(yup.string()).notRequired(),
-      }),
-    )
+    .of(yup.string())
     .required("At least one note is required"),
+
+  photoIds: yup.array().of(yup.string()).notRequired(),
 });
 
 export const EditProjectSchema = yup.object().shape({
