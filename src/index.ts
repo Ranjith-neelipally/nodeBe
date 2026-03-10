@@ -1,6 +1,5 @@
 import express from "express";
 import "dotenv/config";
-import "./db";
 import {
   AuthRouter,
   ProjectsRouter,
@@ -18,6 +17,17 @@ import { globalErrorHandler, setupProcessErrorHandlers } from "./MiddleWare/erro
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+import dbConnect from "./db";
+app.use(async (req, res, next) => {
+  try {
+    await dbConnect();
+    next();
+  } catch (error) {
+    console.error("Database connection failed", error);
+    res.status(500).json({ error: "Database connection failed" });
+  }
+});
 
 app.use(requestContextMiddleware);
 
@@ -42,6 +52,10 @@ app.use(globalErrorHandler);
 
 setupProcessErrorHandlers();
 
-app.listen(1430, () => {
-  console.log("listening to port and");
-});
+if (process.env.NODE_ENV !== "production") {
+  app.listen(1430, () => {
+    console.log("listening to port 1430");
+  });
+}
+
+export default app;
