@@ -289,24 +289,23 @@ export const EditNoteSchema = yup
       })
       .required("PlotId is invalid or missing."),
 
-    note: yup
-      .string()
-      .trim()
+    content: yup
+      .array()
+      .of(yup.string().trim())
       .notRequired()
-      .typeError("Note content must be a string")
+      .typeError("Content must be an array of strings")
       .max(2000, "Note content is too long"),
 
-    photoIds: yup.array().of(yup.string().strict(true)).notRequired(),
+    photoIds: yup.array().of(yup.string()).notRequired(),
   })
   .test(
     "at-least-one-field",
     "Either content or photoIds must be provided",
     function (value) {
       const hasContent =
-        typeof value?.note === "string" && value.note.trim().length > 0;
+        Array.isArray(value?.content) && value.content.length > 0;
 
-      const hasPhotos =
-        Array.isArray(value?.photoIds) && value.photoIds.length > 0;
+      const hasPhotos = Array.isArray(value?.photoIds);
 
       return hasContent || hasPhotos;
     },
