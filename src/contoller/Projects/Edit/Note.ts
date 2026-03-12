@@ -3,9 +3,9 @@ import { PlotNotes } from "../../../modals/Projects/Notes";
 import { Plots } from "../../../modals/Projects/Plots";
 
 export const EditNote: RequestHandler = async (req, res) => {
-  const { projectId, plotId, noteId, note, photoIds } = req.body;
+  const { projectId, plotId, noteId, content, photoIds } = req.body;
 
-  if (typeof note === "undefined" && typeof photoIds === "undefined") {
+  if (typeof content === "undefined" && typeof photoIds === "undefined") {
     return res
       .status(400)
       .json({ error: "At least one of content or photoIds must be provided." });
@@ -20,10 +20,10 @@ export const EditNote: RequestHandler = async (req, res) => {
     }
 
     const updateObj: any = {};
-    if (typeof note !== "undefined") {
-      updateObj["content.$.note"] = note;
+    if (Array.isArray(content) && content.length > 0) {
+      updateObj["content.$.note"] = content;
     }
-    if (typeof photoIds !== "undefined") {
+    if (Array.isArray(photoIds)) {
       updateObj["content.$.photoIds"] = photoIds;
     }
 

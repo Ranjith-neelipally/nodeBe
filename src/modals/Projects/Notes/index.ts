@@ -3,9 +3,8 @@ import { Schema, Types, model } from "mongoose";
 const PlotNoteItemSchema = new Schema(
   {
     note: {
-      type: String,
-      required: true,
-      trim: true,
+      type: [String],
+      default: [],
     },
     photoIds: {
       type: [String],

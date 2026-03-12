@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
 import { MONGO_URI } from "../utils/variables";
+import dns from "dns";
+
+// Force Google DNS for SRV resolution to fix ETIMEOUT on certain networks (e.g., JioFiber)
+dns.setServers(["8.8.8.8", "8.8.4.4"]);
 
 const URI = MONGO_URI as string;
 
@@ -19,6 +23,8 @@ async function dbConnect() {
   if (!cached.promise) {
     const opts = {
       bufferCommands: false,
+      serverSelectionTimeoutMS: 30000,
+      connectTimeoutMS: 30000,
     };
 
     cached.promise = mongoose.connect(URI, opts).then((mongoose) => {
