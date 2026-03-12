@@ -14,6 +14,8 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const mongoose_1 = __importDefault(require("mongoose"));
 const variables_1 = require("../utils/variables");
+const dns_1 = __importDefault(require("dns"));
+dns_1.default.setServers(["8.8.8.8", "8.8.4.4"]);
 const URI = variables_1.MONGO_URI;
 let cached = global.mongoose;
 if (!cached) {
@@ -27,6 +29,8 @@ function dbConnect() {
         if (!cached.promise) {
             const opts = {
                 bufferCommands: false,
+                serverSelectionTimeoutMS: 30000,
+                connectTimeoutMS: 30000,
             };
             cached.promise = mongoose_1.default.connect(URI, opts).then((mongoose) => {
                 console.log("Connected to db");

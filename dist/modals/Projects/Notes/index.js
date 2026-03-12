@@ -4,9 +4,8 @@ exports.PlotNotes = exports.PlotNotesSchema = void 0;
 const mongoose_1 = require("mongoose");
 const PlotNoteItemSchema = new mongoose_1.Schema({
     note: {
-        type: String,
-        required: true,
-        trim: true,
+        type: [String],
+        default: [],
     },
     photoIds: {
         type: [String],

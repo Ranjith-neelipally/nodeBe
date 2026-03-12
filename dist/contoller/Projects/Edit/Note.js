@@ -13,8 +13,8 @@ exports.EditNote = void 0;
 const Notes_1 = require("../../../modals/Projects/Notes");
 const Plots_1 = require("../../../modals/Projects/Plots");
 const EditNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { projectId, plotId, noteId, note, photoIds } = req.body;
-    if (typeof note === "undefined" && typeof photoIds === "undefined") {
+    const { projectId, plotId, noteId, content, photoIds } = req.body;
+    if (typeof content === "undefined" && typeof photoIds === "undefined") {
         return res
             .status(400)
             .json({ error: "At least one of content or photoIds must be provided." });
@@ -27,10 +27,10 @@ const EditNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 .json({ error: "Invalid plot for the specified project." });
         }
         const updateObj = {};
-        if (typeof note !== "undefined") {
-            updateObj["content.$.note"] = note;
+        if (Array.isArray(content) && content.length > 0) {
+            updateObj["content.$.note"] = content;
         }
-        if (typeof photoIds !== "undefined") {
+        if (Array.isArray(photoIds)) {
             updateObj["content.$.photoIds"] = photoIds;
         }
         const updated = yield Notes_1.PlotNotes.findOneAndUpdate({
