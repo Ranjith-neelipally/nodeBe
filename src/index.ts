@@ -19,22 +19,20 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-let dbConnected = false;
-dbConnect()
-  .then(() => {
-    dbConnected = true;
-  })
-  .catch((error) => {
-    console.error("✗ Initial database connection failed:", error);
-    process.exit(1);
-  });
+void dbConnect().catch((error) => {
+  console.error("✗ Initial database connection failed:", error);
+});
 
-// Middleware to check if DB is connected
-app.use((req, res, next) => {
-  if (!dbConnected) {
+// In serverless production, requests can arrive before the initial connection finishes.
+// Await the cached connection promise here so cold starts don't return a false 503.
+app.use(async (req, res, next) => {
+  try {
+    await dbConnect();
+    next();
+  } catch (error) {
+    console.error("✗ Database connection unavailable for request:", error);
     return res.status(503).json({ error: "Database not connected" });
   }
-  next();
 });
 
 app.use(requestContextMiddleware);
