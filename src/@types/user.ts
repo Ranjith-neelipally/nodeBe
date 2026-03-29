@@ -11,7 +11,7 @@ export interface CreateUser extends Request {
 export interface VerifyEmail extends Request {
   body: {
     userId: string;
-    token: string;
+    code: string;
   };
 }
 

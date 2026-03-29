@@ -16,23 +16,46 @@ exports.sendSuccessEmail = exports.sendPasswordResetMail = exports.sendVerificat
 const WelcomeMail_1 = require("../mail/WelcomeMail");
 const variables_1 = require("../utils/variables");
 const nodemailer_1 = __importDefault(require("nodemailer"));
-const variables_2 = require("./variables");
-const generateMailTransporter = () => {
-    const transporter = nodemailer_1.default.createTransport({
+const getSenderAddress = () => {
+    if (!variables_1.GMAIL_USER) {
+        throw new Error("Missing GMAIL_USER environment variable for email transport.");
+    }
+    return variables_1.VERIFICATIONEMAIL && variables_1.VERIFICATIONEMAIL.toLowerCase() === variables_1.GMAIL_USER.toLowerCase()
+        ? variables_1.VERIFICATIONEMAIL
+        : variables_1.GMAIL_USER;
+};
+const createTransporter = () => {
+    if (!variables_1.GMAIL_USER || !variables_1.GMAIL_PASS) {
+        throw new Error("Missing GMAIL_USER or GMAIL_PASS environment variables for Gmail authentication.");
+    }
+    const cleanPassword = variables_1.GMAIL_PASS.replace(/\s/g, "");
+    return nodemailer_1.default.createTransport({
         service: "gmail",
         auth: {
             user: variables_1.GMAIL_USER,
-            pass: variables_1.GMAIL_PASS,
+            pass: cleanPassword,
         },
     });
-    return transporter;
 };
+const sendEmailViaGmail = (mailOptions) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const transporter = createTransporter();
+        const info = yield transporter.sendMail(Object.assign(Object.assign({}, mailOptions), { from: getSenderAddress(), replyTo: mailOptions.replyTo || mailOptions.from }));
+        console.log(`✓ Email sent to ${mailOptions.to}:`, info.response);
+    }
+    catch (error) {
+        console.error(`✗ Failed to send email to ${mailOptions.to}:`, error);
+        if (error instanceof Error && "code" in error && error.code === "EAUTH") {
+            throw new Error("Gmail authentication failed. Verify that GMAIL_USER matches the Google account that generated the App Password, 2-Step Verification is enabled on that account, and GMAIL_PASS is the 16-character App Password.");
+        }
+        throw error;
+    }
+});
 const sendVerificationMail = (token, profile) => __awaiter(void 0, void 0, void 0, function* () {
-    const transport = generateMailTransporter();
     const { name, email, userId } = profile;
-    transport.sendMail({
+    yield sendEmailViaGmail({
         to: email,
-        from: variables_2.VERIFICATIONEMAIL,
+        from: variables_1.VERIFICATIONEMAIL,
         html: (0, WelcomeMail_1.Email)({
             Otp: `Your OTP: ${token}`,
             userName: name,
@@ -43,31 +66,29 @@ const sendVerificationMail = (token, profile) => __awaiter(void 0, void 0, void 
 });
 exports.sendVerificationMail = sendVerificationMail;
 const sendPasswordResetMail = (options) => __awaiter(void 0, void 0, void 0, function* () {
-    const transport = generateMailTransporter();
     const { link, email } = options;
-    transport.sendMail({
+    yield sendEmailViaGmail({
         to: email,
-        from: variables_2.VERIFICATIONEMAIL,
+        from: variables_1.VERIFICATIONEMAIL,
         html: (0, WelcomeMail_1.Email)({
             userName: email,
             subject: "Reset Password Link",
             button: link,
-            message: "We just recieved a request yjay you forgot your password. Click on the link and reset your password.",
+            message: "We just recieved a request that you forgot your password. Click on the link and reset your password.",
             title: "Forgot password",
         }),
     });
 });
 exports.sendPasswordResetMail = sendPasswordResetMail;
 const sendSuccessEmail = (profile) => __awaiter(void 0, void 0, void 0, function* () {
-    const transport = generateMailTransporter();
     const { name, email } = profile;
-    transport.sendMail({
+    yield sendEmailViaGmail({
         to: email,
-        from: variables_2.VERIFICATIONEMAIL,
+        from: variables_1.VERIFICATIONEMAIL,
         html: (0, WelcomeMail_1.Email)({
             userName: name,
             subject: "Success Mail",
-            message: "your Password has changed Successfully !",
+            message: "Your password has been changed successfully!",
         }),
     });
 });

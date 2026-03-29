@@ -13,20 +13,28 @@ import { ValidateUserMiddleware } from "./MiddleWare/user";
 import { verifyLoginToken } from "./MiddleWare/auth";
 import { requestContextMiddleware } from "./MiddleWare/requestContext";
 import { globalErrorHandler, setupProcessErrorHandlers } from "./MiddleWare/errorHandler";
+import dbConnect from "./db";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-import dbConnect from "./db";
-app.use(async (req, res, next) => {
-  try {
-    await dbConnect();
-    next();
-  } catch (error) {
-    console.error("Database connection failed", error);
-    res.status(500).json({ error: "Database connection failed" });
+let dbConnected = false;
+dbConnect()
+  .then(() => {
+    dbConnected = true;
+  })
+  .catch((error) => {
+    console.error("✗ Initial database connection failed:", error);
+    process.exit(1);
+  });
+
+// Middleware to check if DB is connected
+app.use((req, res, next) => {
+  if (!dbConnected) {
+    return res.status(503).json({ error: "Database not connected" });
   }
+  next();
 });
 
 app.use(requestContextMiddleware);

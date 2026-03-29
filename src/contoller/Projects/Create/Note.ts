@@ -5,7 +5,7 @@ import { Plots } from "../../../modals/Projects/Plots";
 
 export const CreateNote: RequestHandler = async (req, res) => {
   try {
-    let { projectId, plotId, userId, content, photoIds } = req.body;
+    let { projectId, plotId, userId, content, photoIds, title } = req.body;
 
     const validPlot = await Plots.findOne({
       _id: plotId,
@@ -18,31 +18,22 @@ export const CreateNote: RequestHandler = async (req, res) => {
         .json({ error: "Invalid plot for the specified project." });
     }
 
-    let formattedContent: any[] = [];
-    if (Array.isArray(content)) {
-      formattedContent = content.map((noteText, idx) => ({
-        note: noteText,
-        photoIds: idx === 0 && Array.isArray(photoIds) ? photoIds : []
-      }));
-    } else if (typeof content === "string") {
-      formattedContent = [{ note: content, photoIds: Array.isArray(photoIds) ? photoIds : [] }];
-    }
+    // Create a new note document for each note
+    const newNote = await PlotNotes.create({
+      projectId,
+      plotId,
+      userId,
+      title: title || "",
+      content: [{
+        note: Array.isArray(content) ? content : [content],
+        photoIds: Array.isArray(photoIds) ? photoIds : []
+      }],
+    });
 
-    let doc = await PlotNotes.findOne({ projectId, plotId, userId });
+    // Update the plot's notesCount
+    await Plots.findByIdAndUpdate(plotId, { $inc: { notesCount: 1 } });
 
-    if (doc) {
-      doc.content.push(...formattedContent);
-      await doc.save();
-    } else {
-      doc = await PlotNotes.create({
-        projectId,
-        plotId,
-        userId,
-        content: formattedContent,
-      });
-    }
-
-    res.json(doc);
+    res.json(newNote);
   } catch (err) {
     res.status(500).json({ error: err });
   }

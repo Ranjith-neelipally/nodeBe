@@ -68,6 +68,7 @@ const DeleteNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             return res.status(404).json({ error: "Note not found" });
         }
         yield Notes_1.PlotNotes.deleteOne({ _id: note._id });
+        yield Plots_1.Plots.findByIdAndUpdate(plotId, { $inc: { notesCount: -1 } });
         res.status(200).json({ message: "Note deleted successfully" });
     }
     catch (error) {

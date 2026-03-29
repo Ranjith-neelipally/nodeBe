@@ -29,7 +29,7 @@ export const CreateNewUser: RequestHandler = async (req: CreateUser, res) => {
       userId: user._id.toString(),
     });
 
-    res.status(201).json({ user });
+    res.status(201).json({ user_id: user._id });
   } catch (error) {
     res.json({ error: error });
   }

@@ -35,7 +35,7 @@ const CreateNewUser = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             name: userName,
             userId: user._id.toString(),
         });
-        res.status(201).json({ user });
+        res.status(201).json({ user_id: user._id });
     }
     catch (error) {
         res.json({ error: error });

@@ -29,6 +29,13 @@ const SignIn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 res.status(403).json({ error: "User/Password mismatch" });
             }
             else {
+                if (!user.verified) {
+                    return res.status(403).json({
+                        error: "Profile not verified",
+                        message: "Please verify your email before signing in. Check your email for verification instructions.",
+                        verified: false
+                    });
+                }
                 const jwdToken = jsonwebtoken_1.default.sign({ userId: user._id }, variables_1.TOKEN_KEY);
                 user.tokens.push(jwdToken);
                 yield user.save();

@@ -16,6 +16,15 @@ export const SignIn: RequestHandler = async (req: CreateUser, res) => {
       if (!matched) {
         res.status(403).json({ error: "User/Password mismatch" });
       } else {
+        // Check if user profile is verified
+        if (!user.verified) {
+          return res.status(403).json({
+            error: "Profile not verified",
+            message: "Please verify your email before signing in. Check your email for verification instructions.",
+            verified: false
+          });
+        }
+
         const jwdToken = jwt.sign({ userId: user._id }, TOKEN_KEY);
         user.tokens.push(jwdToken);
         await user.save();

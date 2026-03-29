@@ -1,7 +1,6 @@
 import { Email } from "../mail/WelcomeMail";
-import { GMAIL_USER, GMAIL_PASS } from "../utils/variables";
+import { GMAIL_USER, GMAIL_PASS, VERIFICATIONEMAIL } from "../utils/variables";
 import nodemailer from "nodemailer";
-import { VERIFICATIONEMAIL } from "./variables";
 
 interface Profile {
   name: string;
@@ -15,23 +14,65 @@ interface resetPassword {
   name: string;
 }
 
-const generateMailTransporter = () => {
-  const transporter = nodemailer.createTransport({
+const getSenderAddress = () => {
+  if (!GMAIL_USER) {
+    throw new Error("Missing GMAIL_USER environment variable for email transport.");
+  }
+
+  return VERIFICATIONEMAIL && VERIFICATIONEMAIL.toLowerCase() === GMAIL_USER.toLowerCase()
+    ? VERIFICATIONEMAIL
+    : GMAIL_USER;
+};
+
+const createTransporter = () => {
+  if (!GMAIL_USER || !GMAIL_PASS) {
+    throw new Error("Missing GMAIL_USER or GMAIL_PASS environment variables for Gmail authentication.");
+  }
+
+  // Gmail app passwords are shown with spaces for readability.
+  const cleanPassword = GMAIL_PASS.replace(/\s/g, "");
+
+  return nodemailer.createTransport({
     service: "gmail",
     auth: {
       user: GMAIL_USER,
-      pass: GMAIL_PASS,
+      pass: cleanPassword,
     },
   });
-  return transporter;
+};
+
+const sendEmailViaGmail = async (mailOptions: {
+  to: string;
+  from: string;
+  html: string;
+  subject?: string;
+  replyTo?: string;
+}): Promise<void> => {
+  try {
+    const transporter = createTransporter();
+    const info = await transporter.sendMail({
+      ...mailOptions,
+      from: getSenderAddress(),
+      replyTo: mailOptions.replyTo || mailOptions.from,
+    });
+    console.log(`✓ Email sent to ${mailOptions.to}:`, info.response);
+  } catch (error) {
+    console.error(`✗ Failed to send email to ${mailOptions.to}:`, error);
+
+    if (error instanceof Error && "code" in error && error.code === "EAUTH") {
+      throw new Error(
+        "Gmail authentication failed. Verify that GMAIL_USER matches the Google account that generated the App Password, 2-Step Verification is enabled on that account, and GMAIL_PASS is the 16-character App Password."
+      );
+    }
+
+    throw error;
+  }
 };
 
 export const sendVerificationMail = async (token: string, profile: Profile) => {
-  const transport = generateMailTransporter();
-
   const { name, email, userId } = profile;
 
-  transport.sendMail({
+  await sendEmailViaGmail({
     to: email,
     from: VERIFICATIONEMAIL,
     html: Email({
@@ -45,11 +86,9 @@ export const sendVerificationMail = async (token: string, profile: Profile) => {
 };
 
 export const sendPasswordResetMail = async (options: resetPassword) => {
-  const transport = generateMailTransporter();
-
   const { link, email } = options;
 
-  transport.sendMail({
+  await sendEmailViaGmail({
     to: email,
     from: VERIFICATIONEMAIL,
     html: Email({
@@ -57,25 +96,23 @@ export const sendPasswordResetMail = async (options: resetPassword) => {
       subject: "Reset Password Link",
       button: link,
       message:
-        "We just recieved a request yjay you forgot your password. Click on the link and reset your password.",
+        "We just recieved a request that you forgot your password. Click on the link and reset your password.",
       title: "Forgot password",
     }),
   });
 };
 
-export const sendSuccessEmail = async ( profile: Profile) => {
-  const transport = generateMailTransporter();
-
+export const sendSuccessEmail = async (profile: Profile) => {
   const { name, email } = profile;
 
-  transport.sendMail({
+  await sendEmailViaGmail({
     to: email,
     from: VERIFICATIONEMAIL,
     html: Email({
       userName: name,
       subject: "Success Mail",
       message:
-        "your Password has changed Successfully !",
+        "Your password has been changed successfully!",
     }),
   });
 };

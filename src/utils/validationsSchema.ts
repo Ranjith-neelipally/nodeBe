@@ -155,3 +155,16 @@ export const DeleteIdeaSchema = yup.object().shape({
     })
     .required("UserId is invalid or missing."),
 });
+
+export const ProfileVerificationCodeSchema = yup.object().shape({
+ userId: yup
+    .string()
+    .transform(function (value) {
+      if (this.isType(value) && isValidObjectId(value)) {
+        return value;
+      }
+      return "";
+    })
+    .required("UserId is invalid or missing."),
+  code: yup.string().trim().required("Verification code is required"),
+});

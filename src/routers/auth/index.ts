@@ -4,6 +4,7 @@ import {
   TokenAndIdValidation,
   PasswordCheckSchema,
   LoginValidationSchema,
+  ProfileVerificationCodeSchema,
 } from "../../utils/validationsSchema";
 import { validate } from "../../MiddleWare/Validator";
 import {
@@ -26,10 +27,10 @@ const AuthRouter = Router();
 
 AuthRouter.get("/get-user", verifyLoginToken, GetUser);
 
-AuthRouter.post("/sign-up", validate(CreateUserSchema), CreateNewUser);
-AuthRouter.post("/verifyEmail", validate(TokenAndIdValidation), VerifyEmail);
-AuthRouter.post("/reVerifyEmail", ResendVerificationEmail);
-AuthRouter.post("/forgotPassword", GenerateResetPasswordLink);
+AuthRouter.post("/signup", validate(CreateUserSchema), CreateNewUser);
+AuthRouter.post("/verify-email", validate(ProfileVerificationCodeSchema), VerifyEmail);
+AuthRouter.post("/resend-verification-email", validate(ProfileVerificationCodeSchema), ResendVerificationEmail);
+AuthRouter.post("/forgot-password", GenerateResetPasswordLink);
 
 AuthRouter.post(
   "/verify-reset-password",

@@ -5,10 +5,11 @@ export interface Note extends Request {
     _id?: string;
     projectId: string;
     plotId: string;
-    content: string;
-    photoIds: string[];
+    content: string | string[];
+    photoIds?: string[];
     userId: string;
     noteId?: string;
+    title?: string;
   };
 }
 

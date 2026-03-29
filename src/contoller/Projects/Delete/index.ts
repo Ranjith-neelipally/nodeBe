@@ -85,6 +85,9 @@ export const DeleteNote: RequestHandler = async (
 
     await PlotNotes.deleteOne({ _id: note._id });
 
+    // Decrement the notesCount in the plot
+    await Plots.findByIdAndUpdate(plotId, { $inc: { notesCount: -1 } });
+
     res.status(200).json({ message: "Note deleted successfully" });
   } catch (error) {
     console.error("Error deleting note:", error);

@@ -13,10 +13,10 @@ export const VerifyEmail: RequestHandler = async (
   res
 ) => {
   try {
-    const { userId, token } = req.body;
+    const { userId, code } = req.body;
 
-    if (typeof token !== "string" || token.trim() === "") {
-      return res.status(403).json({ error: "Token must be a valid string" });
+    if (typeof code !== "string" || code.trim() === "") {
+      return res.status(403).json({ error: `Code must be a valid string not ${typeof code} and ${code}` });
     }
 
     const verificationToken = await emailVerificationTokenDocument.findOne({
@@ -28,8 +28,8 @@ export const VerifyEmail: RequestHandler = async (
     }
 
     const matched =
-      (await verificationToken.compareToken(token.trim())) ||
-      token.trim() === TEMPORARY_OTP.trim();
+      (await verificationToken.compareToken(code.trim())) ||
+      code.trim() === TEMPORARY_OTP.trim();
 
     if (!matched) {
       return res.status(403).json({ error: "Invalid token" });

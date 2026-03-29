@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.DeleteIdeaSchema = exports.GetIdeaSchema = exports.editIdeaSchema = exports.CreateIdeaSchema = exports.LoginValidationSchema = exports.PasswordCheckSchema = exports.TokenAndIdValidation = exports.CreateUserSchema = void 0;
+exports.ProfileVerificationCodeSchema = exports.DeleteIdeaSchema = exports.GetIdeaSchema = exports.editIdeaSchema = exports.CreateIdeaSchema = exports.LoginValidationSchema = exports.PasswordCheckSchema = exports.TokenAndIdValidation = exports.CreateUserSchema = void 0;
 const yup = __importStar(require("yup"));
 const mongoose_1 = require("mongoose");
 const PasswordvalidationExpression = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[!@#\$%\^&\*])[a-zA-Z\d!@#\$%\^&\*]{8,}$/;
@@ -179,4 +179,16 @@ exports.DeleteIdeaSchema = yup.object().shape({
         return "";
     })
         .required("UserId is invalid or missing."),
+});
+exports.ProfileVerificationCodeSchema = yup.object().shape({
+    userId: yup
+        .string()
+        .transform(function (value) {
+        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
+            return value;
+        }
+        return "";
+    })
+        .required("UserId is invalid or missing."),
+    code: yup.string().trim().required("Verification code is required"),
 });

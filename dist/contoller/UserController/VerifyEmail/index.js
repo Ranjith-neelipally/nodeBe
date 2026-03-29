@@ -21,9 +21,9 @@ const variables_1 = require("../../../utils/variables");
 const mongoose_1 = __importDefault(require("mongoose"));
 const VerifyEmail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { userId, token } = req.body;
-        if (typeof token !== "string" || token.trim() === "") {
-            return res.status(403).json({ error: "Token must be a valid string" });
+        const { userId, code } = req.body;
+        if (typeof code !== "string" || code.trim() === "") {
+            return res.status(403).json({ error: `Code must be a valid string not ${typeof code} and ${code}` });
         }
         const verificationToken = yield userVerification_1.default.findOne({
             owner: userId,
@@ -31,8 +31,8 @@ const VerifyEmail = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         if (!verificationToken) {
             return res.status(403).json({ error: "Invalid token" });
         }
-        const matched = (yield verificationToken.compareToken(token.trim())) ||
-            token.trim() === variables_1.TEMPORARY_OTP.trim();
+        const matched = (yield verificationToken.compareToken(code.trim())) ||
+            code.trim() === variables_1.TEMPORARY_OTP.trim();
         if (!matched) {
             return res.status(403).json({ error: "Invalid token" });
         }

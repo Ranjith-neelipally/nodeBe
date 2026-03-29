@@ -3,12 +3,12 @@ import { PlotNotes } from "../../../modals/Projects/Notes";
 import { Plots } from "../../../modals/Projects/Plots";
 
 export const EditNote: RequestHandler = async (req, res) => {
-  const { projectId, plotId, noteId, content, photoIds } = req.body;
+  const { projectId, plotId, noteId, content, photoIds, title } = req.body;
 
-  if (typeof content === "undefined" && typeof photoIds === "undefined") {
+  if (typeof content === "undefined" && typeof photoIds === "undefined" && typeof title === "undefined") {
     return res
       .status(400)
-      .json({ error: "At least one of content or photoIds must be provided." });
+      .json({ error: "At least one of content, photoIds, or title must be provided." });
   }
 
   try {
@@ -20,18 +20,21 @@ export const EditNote: RequestHandler = async (req, res) => {
     }
 
     const updateObj: any = {};
+    if (typeof title !== "undefined") {
+      updateObj.title = title;
+    }
     if (Array.isArray(content) && content.length > 0) {
-      updateObj["content.$.note"] = content;
+      updateObj["content.0.note"] = content;
     }
     if (Array.isArray(photoIds)) {
-      updateObj["content.$.photoIds"] = photoIds;
+      updateObj["content.0.photoIds"] = photoIds;
     }
 
     const updated = await PlotNotes.findOneAndUpdate(
       {
+        _id: noteId,
         projectId,
         plotId,
-        "content._id": noteId,
       },
       { $set: updateObj },
       { new: true },

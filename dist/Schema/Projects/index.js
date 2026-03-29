@@ -177,10 +177,16 @@ exports.CreateNoteSchema = yup.object().shape({
     replication: yup.number().optional(),
     treatment: yup.number().optional(),
     content: yup
-        .array()
-        .of(yup.string())
+        .mixed()
+        .transform((value) => {
+        if (typeof value === 'string')
+            return [value];
+        if (Array.isArray(value))
+            return value;
+        return [''];
+    })
         .required("At least one note is required"),
-    photoIds: yup.array().of(yup.string()).notRequired(),
+    photoIds: yup.array().of(yup.string()).optional(),
 });
 exports.EditProjectSchema = yup.object().shape({
     _id: yup
@@ -460,4 +466,14 @@ exports.GetNoteSchema = yup.object().shape({
         }
         return "";
     }),
+    date: yup
+        .string()
+        .matches(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+        .notRequired(),
+    limit: yup
+        .number()
+        .min(1, "Limit must be at least 1.")
+        .max(100, "Limit cannot exceed 100.")
+        .notRequired(),
+    page: yup.number().min(1, "Page must be at least 1.").notRequired(),
 });
