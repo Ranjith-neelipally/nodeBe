@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.GetAllPhotos = void 0;
 const Notes_1 = require("../../../modals/Projects/Notes");
 const GetAllPhotos = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId } = req.query;
+    const userId = req.user.id;
     try {
         const notesWithPhotos = yield Notes_1.PlotNotes.find({
             userId,

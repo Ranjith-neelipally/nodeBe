@@ -1,4 +1,5 @@
 import { Schema, Types, model } from "mongoose";
+import { attachSyncMetadata } from "../../../sync/metadata";
 
 export const PlotSchema = new Schema(
   {
@@ -41,5 +42,7 @@ export const PlotSchema = new Schema(
   },
   { timestamps: true }
 );
+
+attachSyncMetadata(PlotSchema);
 
 export const Plots = model("Plots", PlotSchema);

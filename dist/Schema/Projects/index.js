@@ -37,15 +37,7 @@ exports.GetNoteSchema = exports.GetAllPlotsSchema = exports.GetAllProjectsSchema
 const yup = __importStar(require("yup"));
 const mongoose_1 = require("mongoose");
 exports.CreateProjectSchema = yup.object().shape({
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
-            return value;
-        }
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
     title: yup
         .string()
         .trim()
@@ -66,15 +58,7 @@ exports.CreateProjectSchema = yup.object().shape({
         .max(200, "Location is too long"),
 });
 exports.CreatePlotSchema = yup.object().shape({
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
-            return value;
-        }
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
     projectId: yup
         .string()
         .transform(function (value) {
@@ -113,15 +97,7 @@ exports.CreatePlotSchema = yup.object().shape({
         .required("Plots array is required"),
 });
 exports.CreateNoteSchema2 = yup.object().shape({
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
-            return value;
-        }
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
     projectId: yup
         .string()
         .transform(function (value) {
@@ -148,14 +124,7 @@ exports.CreateNoteSchema2 = yup.object().shape({
     photoIds: yup.array().of(yup.string()).notRequired(),
 });
 exports.CreateNoteSchema = yup.object().shape({
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value))
-            return value;
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
     projectId: yup
         .string()
         .transform(function (value) {
@@ -198,15 +167,7 @@ exports.EditProjectSchema = yup.object().shape({
         return "";
     })
         .required("Project id is invalid or missing."),
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
-            return value;
-        }
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
     title: yup
         .string()
         .trim()
@@ -238,15 +199,7 @@ exports.EditPlotSchema = yup.object().shape({
         return "";
     })
         .required("Plot id is invalid or missing."),
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
-            return value;
-        }
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
     projectId: yup
         .string()
         .transform(function (value) {
@@ -292,14 +245,7 @@ exports.EditNoteSchema = yup
         return "";
     })
         .required("Note id is invalid or missing."),
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value))
-            return value;
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
     projectId: yup
         .string()
         .transform(function (value) {
@@ -323,11 +269,13 @@ exports.EditNoteSchema = yup
         .typeError("Content must be an array of strings")
         .max(2000, "Note content is too long"),
     photoIds: yup.array().of(yup.string()).notRequired(),
+    title: yup.string().notRequired(),
 })
-    .test("at-least-one-field", "Either content or photoIds must be provided", function (value) {
+    .test("at-least-one-field", "Either content, photoIds, or title must be provided", function (value) {
     const hasContent = Array.isArray(value === null || value === void 0 ? void 0 : value.content) && value.content.length > 0;
     const hasPhotos = Array.isArray(value === null || value === void 0 ? void 0 : value.photoIds);
-    return hasContent || hasPhotos;
+    const hasTitle = typeof (value === null || value === void 0 ? void 0 : value.title) === "string";
+    return hasContent || hasPhotos || hasTitle;
 });
 exports.DeleteProjectSchema = yup.object().shape({
     _id: yup
@@ -339,15 +287,7 @@ exports.DeleteProjectSchema = yup.object().shape({
         return "";
     })
         .required("Project id is invalid or missing."),
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
-            return value;
-        }
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
 });
 exports.DeletePlotSchema = yup.object().shape({
     _id: yup
@@ -359,15 +299,7 @@ exports.DeletePlotSchema = yup.object().shape({
         return "";
     })
         .required("Plot id is invalid or missing."),
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
-            return value;
-        }
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
     projectId: yup
         .string()
         .transform(function (value) {
@@ -388,15 +320,7 @@ exports.DeleteNoteSchema = yup.object().shape({
         return "";
     })
         .required("Note id is invalid or missing."),
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
-            return value;
-        }
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
     projectId: yup
         .string()
         .transform(function (value) {
@@ -417,15 +341,7 @@ exports.DeleteNoteSchema = yup.object().shape({
         .required("PlotId is invalid or missing."),
 });
 exports.GetAllProjectsSchema = yup.object().shape({
-    userId: yup
-        .string()
-        .transform(function (value) {
-        if (this.isType(value) && (0, mongoose_1.isValidObjectId)(value)) {
-            return value;
-        }
-        return "";
-    })
-        .required("UserId is invalid or missing."),
+    userId: yup.string().notRequired(),
 });
 exports.GetAllPlotsSchema = yup.object().shape({
     userId: yup.string().transform(function (value) {

@@ -13,26 +13,19 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifyLoginToken = exports.verifyResetPasswordToken = void 0;
-const resetPassword_1 = __importDefault(require("../modals/resetPassword"));
 const userModal_1 = __importDefault(require("../modals/userModal"));
-const variables_1 = require("../utils/variables");
-const jsonwebtoken_1 = require("jsonwebtoken");
+const authTokens_1 = require("../utils/authTokens");
+const AppError_1 = require("../utils/AppError");
 const verifyResetPasswordToken = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    const { token, userId } = req.body;
-    const resetToken = yield resetPassword_1.default.findOne({
-        owner: userId,
-    });
-    if (!resetToken) {
-        return res
-            .status(403)
-            .json({ error: "Invalid reset token for the given user" });
+    const { token } = req.body;
+    try {
+        const payload = (0, authTokens_1.verifyAuthToken)(token, "password-reset");
+        req.resetUserId = payload.userId;
     }
-    const tokenMatched = yield resetToken.compareToken(token);
-    if (!tokenMatched) {
-        return res.status(403).json({ error: "Token verification failed" });
+    catch (error) {
+        return next(new AppError_1.AppError("Token verification failed", 403, "INVALID_RESET_TOKEN"));
     }
-    next();
-    res.status(200).json({ message: "Token is valid" });
+    return next();
 });
 exports.verifyResetPasswordToken = verifyResetPasswordToken;
 const verifyLoginToken = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
@@ -40,17 +33,17 @@ const verifyLoginToken = (req, res, next) => __awaiter(void 0, void 0, void 0, f
     const { authorization } = req.headers;
     const splitToken = (_a = authorization === null || authorization === void 0 ? void 0 : authorization.split("Bearer ")[1]) === null || _a === void 0 ? void 0 : _a.trim();
     if (!splitToken) {
-        return res.status(403).json({ error: "Unauthorized Request!" });
+        return next(new AppError_1.AppError("Unauthorized request.", 401, "UNAUTHORIZED"));
     }
     try {
-        const details = (0, jsonwebtoken_1.verify)(splitToken, variables_1.TOKEN_KEY);
+        const details = (0, authTokens_1.verifyAuthToken)(splitToken, "access");
         const id = details.userId;
         if (!id) {
-            return res.status(403).json({ error: "Unauthorized Request!" });
+            return next(new AppError_1.AppError("Unauthorized request.", 401, "UNAUTHORIZED"));
         }
-        const user = yield userModal_1.default.findOne({ _id: id, tokens: splitToken });
+        const user = yield userModal_1.default.findById(id);
         if (!user) {
-            return res.status(404).json({ response: "Unauthorized Request!" });
+            return next(new AppError_1.AppError("Unauthorized request.", 401, "UNAUTHORIZED"));
         }
         req.user = {
             id: user._id,
@@ -59,11 +52,10 @@ const verifyLoginToken = (req, res, next) => __awaiter(void 0, void 0, void 0, f
             projects: user.ProjectIds.map((id) => id.toString()),
         };
         req.token = splitToken;
-        next();
+        return next();
     }
     catch (error) {
-        console.error("JWT Verification Error:", error);
-        return res.status(403).json({ error: "Unauthorized Request!" });
+        return next(error);
     }
 });
 exports.verifyLoginToken = verifyLoginToken;

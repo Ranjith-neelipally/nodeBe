@@ -12,6 +12,7 @@ const errorLogSchema = new mongoose.Schema({
     headers: mongoose.Schema.Types.Mixed,
     email: String,
     body: mongoose.Schema.Types.Mixed,
+    requestId: String,
 }, { timestamps: true });
 
 export const ErrorLog = mongoose.model("ErrorLog", errorLogSchema);

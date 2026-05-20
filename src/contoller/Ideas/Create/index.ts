@@ -6,15 +6,16 @@ export const CreateNewIdea: RequestHandler = async (
   req: IdeasInterface,
   res
 ) => {
-  const { userId, idea, date } = req.body;
+  const { idea, date } = req.body;
+  const userId = req.user.id;
   try {
     const newNote = await Ideas.create({
       userId,
       idea,
       date,
     });
-    res.status(201).json({ newNote });
+    return res.status(201).json({ newNote });
   } catch (error) {
-    res.status(500).json({ error: error });
+    return res.status(500).json({ error: error });
   }
 };

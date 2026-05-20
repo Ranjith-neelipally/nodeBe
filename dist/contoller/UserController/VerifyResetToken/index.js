@@ -8,26 +8,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.verifyResetPasswordToken = void 0;
-const resetPassword_1 = __importDefault(require("../../../modals/resetPassword"));
-const verifyResetPasswordToken = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { token, userId } = req.body;
-    const resetToken = yield resetPassword_1.default.findOne({
-        owner: userId,
-    });
-    if (!resetToken) {
-        return res
-            .status(403)
-            .json({ error: "Invalid reset token for the given user" });
+const authTokens_1 = require("../../../utils/authTokens");
+const AppError_1 = require("../../../utils/AppError");
+const asyncHandler_1 = require("../../../utils/asyncHandler");
+const apiResponse_1 = require("../../../utils/apiResponse");
+exports.verifyResetPasswordToken = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { token } = req.body;
+    try {
+        (0, authTokens_1.verifyAuthToken)(token, "password-reset");
     }
-    const tokenMatched = yield resetToken.compareToken(token);
-    if (!tokenMatched) {
-        return res.status(403).json({ error: "Token verification failed" });
+    catch (error) {
+        throw new AppError_1.AppError("Token verification failed", 403, "INVALID_RESET_TOKEN");
     }
-    res.status(200).json({ message: "Token is valid" });
-});
-exports.verifyResetPasswordToken = verifyResetPasswordToken;
+    return (0, apiResponse_1.sendSuccess)(res, null, 200, "Token is valid");
+}));

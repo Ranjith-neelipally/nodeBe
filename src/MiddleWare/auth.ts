@@ -1,34 +1,23 @@
-import { RequestHandler, response } from "express";
-import PasswordResetTokenDocument from "../modals/resetPassword";
+import { RequestHandler } from "express";
 import User from "../modals/userModal";
-import { TOKEN_KEY } from "../utils/variables";
-import { JwtPayload, verify } from "jsonwebtoken";
+import { verifyAuthToken } from "../utils/authTokens";
+import { AppError } from "../utils/AppError";
 
 export const verifyResetPasswordToken: RequestHandler = async (
   req,
   res,
   next
 ) => {
-  const { token, userId } = req.body;
+  const { token } = req.body;
 
-  const resetToken = await PasswordResetTokenDocument.findOne({
-    owner: userId,
-  });
-
-  if (!resetToken) {
-    return res
-      .status(403)
-      .json({ error: "Invalid reset token for the given user" });
+  try {
+    const payload = verifyAuthToken(token, "password-reset");
+    req.resetUserId = payload.userId;
+  } catch (error) {
+    return next(new AppError("Token verification failed", 403, "INVALID_RESET_TOKEN"));
   }
 
-  const tokenMatched = await resetToken.compareToken(token);
-
-  if (!tokenMatched) {
-    return res.status(403).json({ error: "Token verification failed" });
-  }
-  next();
-
-  res.status(200).json({ message: "Token is valid" });
+  return next();
 };
 
 export const verifyLoginToken: RequestHandler = async (req, res, next) => {
@@ -36,21 +25,21 @@ export const verifyLoginToken: RequestHandler = async (req, res, next) => {
   const splitToken = authorization?.split("Bearer ")[1]?.trim();
 
   if (!splitToken) {
-    return res.status(403).json({ error: "Unauthorized Request!" });
+    return next(new AppError("Unauthorized request.", 401, "UNAUTHORIZED"));
   }
 
   try {
-    const details = verify(splitToken, TOKEN_KEY) as JwtPayload;
+    const details = verifyAuthToken(splitToken, "access");
     const id = details.userId;
 
     if (!id) {
-      return res.status(403).json({ error: "Unauthorized Request!" });
+      return next(new AppError("Unauthorized request.", 401, "UNAUTHORIZED"));
     }
 
-    const user = await User.findOne({ _id: id, tokens: splitToken });
+    const user = await User.findById(id);
 
     if (!user) {
-      return res.status(404).json({ response: "Unauthorized Request!" });
+      return next(new AppError("Unauthorized request.", 401, "UNAUTHORIZED"));
     }
 
     req.user = {
@@ -60,9 +49,8 @@ export const verifyLoginToken: RequestHandler = async (req, res, next) => {
       projects: user.ProjectIds.map((id) => id.toString()),
     };
     req.token = splitToken
-    next();
+    return next();
   } catch (error) {
-    console.error("JWT Verification Error:", error);
-    return res.status(403).json({ error: "Unauthorized Request!" });
+    return next(error);
   }
 };

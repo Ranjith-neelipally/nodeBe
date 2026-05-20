@@ -15,7 +15,8 @@ const Plots_1 = require("../../../modals/Projects/Plots");
 const Notes_1 = require("../../../modals/Projects/Notes");
 const DeleteProject = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { _id, userId } = req.body;
+        const { _id } = req.body;
+        const userId = req.user.id;
         const project = yield Projects_1.Projects.findOne({
             _id,
             userId,
@@ -26,7 +27,7 @@ const DeleteProject = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         yield Projects_1.Projects.deleteOne({ _id: project._id });
         yield Plots_1.Plots.deleteMany({ projectId: project._id });
         yield Notes_1.PlotNotes.deleteMany({ projectId: project._id });
-        res.status(200).json({ message: "Project deleted successfully" });
+        return res.status(200).json({ message: "Project deleted successfully" });
     }
     catch (error) {
         console.error("Error deleting project:", error);
@@ -36,7 +37,8 @@ const DeleteProject = (req, res) => __awaiter(void 0, void 0, void 0, function* 
 exports.DeleteProject = DeleteProject;
 const DeletePlot = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { _id, userId, projectId } = req.body;
+        const { _id, projectId } = req.body;
+        const userId = req.user.id;
         const plot = yield Plots_1.Plots.findOne({
             _id,
             userId,
@@ -47,7 +49,7 @@ const DeletePlot = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         }
         yield Plots_1.Plots.deleteOne({ _id: plot._id });
         yield Notes_1.PlotNotes.deleteMany({ plotId: plot._id });
-        res.status(200).json({ message: "Plot deleted successfully" });
+        return res.status(200).json({ message: "Plot deleted successfully" });
     }
     catch (error) {
         console.error("Error deleting plot:", error);
@@ -57,7 +59,8 @@ const DeletePlot = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
 exports.DeletePlot = DeletePlot;
 const DeleteNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { _id, userId, projectId, plotId } = req.body;
+        const { _id, projectId, plotId } = req.body;
+        const userId = req.user.id;
         const note = yield Notes_1.PlotNotes.findOne({
             _id,
             userId,
@@ -69,7 +72,7 @@ const DeleteNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
         }
         yield Notes_1.PlotNotes.deleteOne({ _id: note._id });
         yield Plots_1.Plots.findByIdAndUpdate(plotId, { $inc: { notesCount: -1 } });
-        res.status(200).json({ message: "Note deleted successfully" });
+        return res.status(200).json({ message: "Note deleted successfully" });
     }
     catch (error) {
         console.error("Error deleting note:", error);

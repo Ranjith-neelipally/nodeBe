@@ -13,13 +13,14 @@ exports.CreatePlots = void 0;
 const index_1 = require("../../../modals/Projects/index");
 const Plots_1 = require("../../../modals/Projects/Plots");
 const CreatePlots = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { projectId, userId, plots } = req.body;
+    const userId = req.user.id.toString();
+    const { projectId, plots } = req.body;
     if (!Array.isArray(plots) || plots.length === 0) {
         return res.status(400).json({ error: "No plots provided" });
     }
     try {
-        const project = yield index_1.Projects.findById(projectId);
-        if (!project || project.userId.toString() !== userId) {
+        const project = yield index_1.Projects.findOne({ _id: projectId, userId });
+        if (!project) {
             return res.status(404).json({ error: "Project not found!" });
         }
         const existingPlots = yield Plots_1.Plots.find({ projectId });
@@ -64,7 +65,7 @@ const CreatePlots = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const plotsToInsert = plots.map((plot) => (Object.assign(Object.assign({}, plot), { projectId,
             userId })));
         const createdPlots = yield Plots_1.Plots.insertMany(plotsToInsert);
-        res.status(201).json({ plots: createdPlots });
+        return res.status(201).json({ plots: createdPlots });
     }
     catch (error) {
         let errorMessage = "Unknown error";
@@ -80,7 +81,7 @@ const CreatePlots = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             }
             catch (_a) { }
         }
-        res.status(500).json({ error: errorMessage, data: req.body });
+        return res.status(500).json({ error: errorMessage, data: req.body });
     }
 });
 exports.CreatePlots = CreatePlots;

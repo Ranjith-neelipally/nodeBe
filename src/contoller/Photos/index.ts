@@ -5,7 +5,8 @@ import { Projects } from "../../modals/Projects";
 import { Plots } from "../../modals/Projects/Plots";
 
 export const GetPhotoDetails: RequestHandler = async (req, res) => {
-  const { userId, photoId } = req.query as { userId: string; photoId: string };
+  const userId = req.user.id;
+  const { photoId } = req.query as { photoId: string };
 
   try {
     const Note = await PlotNotes.findOne({ userId, "content.photoIds": photoId });
@@ -30,5 +31,7 @@ export const GetPhotoDetails: RequestHandler = async (req, res) => {
       ProjectTitle: project?.title,
     };
     return res.status(200).json(response);
-  } catch (error) { }
+  } catch (error) {
+    return res.status(500).json({ error: "Internal Server Error" });
+  }
 };

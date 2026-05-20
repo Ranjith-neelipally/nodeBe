@@ -14,10 +14,12 @@ const Notes_1 = require("../../../modals/Projects/Notes");
 const Plots_1 = require("../../../modals/Projects/Plots");
 const CreateNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        let { projectId, plotId, userId, content, photoIds, title } = req.body;
+        const userId = req.user.id;
+        const { projectId, plotId, content, photoIds, title } = req.body;
         const validPlot = yield Plots_1.Plots.findOne({
             _id: plotId,
             projectId: projectId,
+            userId,
         });
         if (!validPlot) {
             return res
@@ -35,10 +37,10 @@ const CreateNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
                 }],
         });
         yield Plots_1.Plots.findByIdAndUpdate(plotId, { $inc: { notesCount: 1 } });
-        res.json(newNote);
+        return res.json(newNote);
     }
     catch (err) {
-        res.status(500).json({ error: err });
+        return res.status(500).json({ error: err });
     }
 });
 exports.CreateNote = CreateNote;

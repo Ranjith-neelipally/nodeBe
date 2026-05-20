@@ -14,23 +14,23 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ValidateUserMiddleware = void 0;
 const userModal_1 = __importDefault(require("../modals/userModal"));
+const AppError_1 = require("../utils/AppError");
 const ValidateUserMiddleware = (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b, _c;
-    const userId = ((_a = req.body) === null || _a === void 0 ? void 0 : _a.userId) || ((_b = req.query) === null || _b === void 0 ? void 0 : _b.userId) || ((_c = req.params) === null || _c === void 0 ? void 0 : _c.userId);
+    var _a;
+    const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
     if (!userId) {
-        return res.status(400).json({ error: "User ID is required" });
+        return next(new AppError_1.AppError("Unauthorized request.", 401, "UNAUTHORIZED"));
     }
     try {
         const user = yield userModal_1.default.findById(userId);
         if (!user) {
-            return res.status(404).json({ error: "User not found, Unauthorized" });
+            return next(new AppError_1.AppError("Unauthorized request.", 401, "UNAUTHORIZED"));
         }
         req.user = user;
-        next();
+        return next();
     }
     catch (error) {
-        console.error("User validation error:", error);
-        return res.status(500).json({ error: "Internal server error" });
+        return next(error);
     }
 });
 exports.ValidateUserMiddleware = ValidateUserMiddleware;

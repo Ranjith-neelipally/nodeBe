@@ -6,13 +6,14 @@ const toDateString = (value: Date | string) =>
   new Date(value).toISOString().split("T")[0];
 
 export const GetNotes: RequestHandler = async (req, res) => {
-  const { userId, projectId, plotId, date, limit, page } = req.query as {
-    userId?: string;
+  const userId = req.user.id;
+  const { projectId, plotId, date, limit, page, skip } = req.query as {
     projectId?: string;
     plotId?: string;
     date?: string;
     limit?: string | number;
     page?: string | number;
+    skip?: string | number;
   };
 
   try {
@@ -24,6 +25,8 @@ export const GetNotes: RequestHandler = async (req, res) => {
     let pg = 1;
     if (page && !isNaN(Number(page))) {
       pg = Math.max(1, Number(page));
+    } else if (skip && !isNaN(Number(skip))) {
+      pg = Math.floor(Number(skip) / lim) + 1;
     }
 
     const query: Record<string, unknown> = {

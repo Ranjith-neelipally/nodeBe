@@ -18,8 +18,6 @@ const Plots_1 = require("../modals/Projects/Plots");
 const Notes_1 = require("../modals/Projects/Notes");
 const Idea_1 = __importDefault(require("../modals/Idea"));
 const userModal_1 = __importDefault(require("../modals/userModal"));
-const resetPassword_1 = __importDefault(require("../modals/resetPassword"));
-const userVerification_1 = __importDefault(require("../modals/userVerification"));
 const Treatments_1 = __importDefault(require("../modals/Treatments"));
 const router = (0, express_1.Router)();
 const apiDocs = {
@@ -802,14 +800,6 @@ const modalUpdates = [
     {
         model: userModal_1.default,
         update: { bio: "", profilePhotoUrl: "" },
-    },
-    {
-        model: resetPassword_1.default,
-        update: {},
-    },
-    {
-        model: userVerification_1.default,
-        update: {},
     },
 ];
 router.post("/refresh-modals", (req, res) => __awaiter(void 0, void 0, void 0, function* () {

@@ -1,17 +1,17 @@
 import { RequestHandler } from "express";
-import { Plot } from "src/@types/Projects";
 import { Projects } from "../../../modals/Projects/index";
 import { Plots } from "../../../modals/Projects/Plots";
 
 export const CreatePlots: RequestHandler = async (req, res) => {
-  const { projectId, userId, plots } = req.body;
+  const userId = req.user.id.toString();
+  const { projectId, plots } = req.body;
   if (!Array.isArray(plots) || plots.length === 0) {
     return res.status(400).json({ error: "No plots provided" });
   }
 
   try {
-    const project = await Projects.findById(projectId);
-    if (!project || project.userId.toString() !== userId) {
+    const project = await Projects.findOne({ _id: projectId, userId });
+    if (!project) {
       return res.status(404).json({ error: "Project not found!" });
     }
 
@@ -71,16 +71,14 @@ export const CreatePlots: RequestHandler = async (req, res) => {
       }
     }
 
-    // Add projectId and userId to each plot
     const plotsToInsert = plots.map((plot: any) => ({
       ...plot,
       projectId,
       userId,
     }));
 
-    // Bulk create
     const createdPlots = await Plots.insertMany(plotsToInsert);
-    res.status(201).json({ plots: createdPlots });
+    return res.status(201).json({ plots: createdPlots });
   } catch (error) {
     let errorMessage = "Unknown error";
     if (error && typeof error === "object" && "message" in error) {
@@ -92,6 +90,6 @@ export const CreatePlots: RequestHandler = async (req, res) => {
         errorMessage = JSON.stringify(error);
       } catch {}
     }
-    res.status(500).json({ error: errorMessage, data: req.body });
+    return res.status(500).json({ error: errorMessage, data: req.body });
   }
 };

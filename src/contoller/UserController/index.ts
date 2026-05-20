@@ -7,6 +7,7 @@ import { UpdatePassword } from "./UpdatePassword";
 import { GenerateResetPasswordLink } from "./ResetPassword";
 import { SignIn } from "./SignIn";
 import {VerifyEmail} from "./VerifyEmail"
+import { Refresh } from "./Refresh";
 
 
 export {
@@ -16,6 +17,7 @@ export {
   GenerateResetPasswordLink,
   ResendVerificationEmail,
   SignIn,
+  Refresh,
   VerifyEmail,
   verifyResetPasswordToken,
   UpdatePassword,

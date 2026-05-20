@@ -13,26 +13,30 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UpdatePassword = void 0;
-const resetPassword_1 = __importDefault(require("../../../modals/resetPassword"));
 const userModal_1 = __importDefault(require("../../../modals/userModal"));
 const mail_1 = require("../../../utils/mail");
-const UpdatePassword = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { password, userId } = req.body;
+const AppError_1 = require("../../../utils/AppError");
+const asyncHandler_1 = require("../../../utils/asyncHandler");
+const apiResponse_1 = require("../../../utils/apiResponse");
+exports.UpdatePassword = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { password } = req.body;
+    const userId = req.resetUserId;
+    if (!userId) {
+        throw new AppError_1.AppError("Unauthorised Access", 403, "UNAUTHORIZED");
+    }
     const user = yield userModal_1.default.findById(userId);
     if (!user) {
-        return res.status(403).json({ error: "Unauthorised Access" });
+        throw new AppError_1.AppError("Unauthorised Access", 403, "UNAUTHORIZED");
     }
     const matched = yield user.comparePassword(password);
     if (matched) {
-        res.status(422).json({ error: "new Passsword must be Unique!" });
+        throw new AppError_1.AppError("New password must be unique.", 422, "PASSWORD_REUSED");
     }
     user.password = password;
     yield user.save();
-    yield resetPassword_1.default.findOneAndDelete({ owner: user._id });
-    (0, mail_1.sendSuccessEmail)({
+    yield (0, mail_1.sendSuccessEmail)({
         name: user.userName,
         email: user.email
     });
-    res.status(200).json({ message: "Password Updated" });
-});
-exports.UpdatePassword = UpdatePassword;
+    return (0, apiResponse_1.sendSuccess)(res, null, 200, "Password Updated");
+}));

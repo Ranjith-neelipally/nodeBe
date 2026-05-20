@@ -14,13 +14,14 @@ const Notes_1 = require("../../../modals/Projects/Notes");
 const Plots_1 = require("../../../modals/Projects/Plots");
 const EditNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { projectId, plotId, noteId, content, photoIds, title } = req.body;
+    const userId = req.user.id;
     if (typeof content === "undefined" && typeof photoIds === "undefined" && typeof title === "undefined") {
         return res
             .status(400)
             .json({ error: "At least one of content, photoIds, or title must be provided." });
     }
     try {
-        const validPlot = yield Plots_1.Plots.findOne({ _id: plotId, projectId });
+        const validPlot = yield Plots_1.Plots.findOne({ _id: plotId, projectId, userId });
         if (!validPlot) {
             return res
                 .status(400)
@@ -40,17 +41,18 @@ const EditNote = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             _id: noteId,
             projectId,
             plotId,
+            userId,
         }, { $set: updateObj }, { new: true });
         if (!updated) {
             return res.status(404).json({ error: "Note not found!" });
         }
-        res.status(200).json({
+        return res.status(200).json({
             message: "Note updated successfully",
             updated,
         });
     }
     catch (error) {
-        res.status(500).json({ error });
+        return res.status(500).json({ error });
     }
 });
 exports.EditNote = EditNote;

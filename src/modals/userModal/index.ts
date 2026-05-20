@@ -8,7 +8,12 @@ interface UserDocument {
   avatar?: { url: string };
   ProjectIds: ObjectId[];
   verified?: boolean;
-  tokens: string[];
+  refreshTokens: {
+    token: string;
+    device?: string;
+    createdAt: Date;
+    expiresAt: Date;
+  }[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -47,7 +52,23 @@ const userSchema = new Schema<UserDocument, {}, PasswordVerificationMethod>({
     },
   ],
 
-  tokens: [String],
+  refreshTokens: [
+    {
+      token: {
+        type: String,
+        required: true,
+      },
+      device: String,
+      createdAt: {
+        type: Date,
+        default: Date.now,
+      },
+      expiresAt: {
+        type: Date,
+        required: true,
+      },
+    },
+  ],
 }, { timestamps: true });
 
 userSchema.pre("save", async function (next) {

@@ -14,7 +14,8 @@ const Plots_1 = require("../../../modals/Projects/Plots");
 const Notes_1 = require("../../../modals/Projects/Notes");
 const toDateString = (value) => new Date(value).toISOString().split("T")[0];
 const GetAllPlots = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId, projectId } = req.query;
+    const userId = req.user.id;
+    const { projectId } = req.query;
     try {
         const plots = yield Plots_1.Plots.find({ userId: userId, projectId: projectId });
         if (!plots.length) {
@@ -24,10 +25,10 @@ const GetAllPlots = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const plotNotes = yield Notes_1.PlotNotes.find({ plotId: { $in: plotIds } }, { plotId: 1, createdAt: 1, _id: 0 });
         const dates = [...new Set(plotNotes.map(({ createdAt }) => toDateString(createdAt)))]
             .sort((a, b) => b.localeCompare(a));
-        res.status(200).json({ data: plots, dates });
+        return res.status(200).json({ data: plots, dates });
     }
     catch (error) {
-        res.status(500).json({ error });
+        return res.status(500).json({ error });
     }
 });
 exports.GetAllPlots = GetAllPlots;

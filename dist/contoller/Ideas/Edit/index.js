@@ -15,7 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EditIdea = void 0;
 const Idea_1 = __importDefault(require("../../../modals/Idea"));
 const EditIdea = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { _id, idea: newIdea, userId, date } = req.body;
+    const { _id, idea: newIdea, date } = req.body;
+    const userId = req.user.id.toString();
     try {
         const idea = yield Idea_1.default.findById(_id);
         if (!idea) {
@@ -26,10 +27,10 @@ const EditIdea = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         }
         yield Idea_1.default.updateOne({ _id: _id }, { $set: { idea: newIdea, date: date } });
         const updatedIdea = yield Idea_1.default.findById(_id);
-        res.status(200).json({ idea: updatedIdea });
+        return res.status(200).json({ idea: updatedIdea });
     }
     catch (error) {
-        res.status(500).json({ error: error });
+        return res.status(500).json({ error: error });
     }
 });
 exports.EditIdea = EditIdea;

@@ -1,90 +1,83 @@
-import { RequestHandler } from "express";
-
 import { VerifyEmail as VerifyEmailrequest } from "src/@types/user";
-import emailVerificationTokenDocument from "../../../modals/userVerification";
 import User from "../../../modals/userModal";
 import { generateToken } from "../../../utils/helpers";
 import { sendVerificationMail } from "../../../utils/mail";
-import { TEMPORARY_OTP } from "../../../utils/variables";
+import {
+  compareEmailCode,
+  hashEmailCode,
+  signEmailVerificationToken,
+  verifyAuthToken,
+} from "../../../utils/authTokens";
 import mongoose from "mongoose";
+import { AppError } from "../../../utils/AppError";
+import { asyncHandler } from "../../../utils/asyncHandler";
+import { sendSuccess } from "../../../utils/apiResponse";
 
-export const VerifyEmail: RequestHandler = async (
+export const VerifyEmail = asyncHandler(async (
   req: VerifyEmailrequest,
   res
 ) => {
-  try {
-    const { userId, code } = req.body;
+  const { userId, code, verificationToken } = req.body;
 
-    if (typeof code !== "string" || code.trim() === "") {
-      return res.status(403).json({ error: `Code must be a valid string not ${typeof code} and ${code}` });
-    }
-
-    const verificationToken = await emailVerificationTokenDocument.findOne({
-      owner: userId,
-    });
-
-    if (!verificationToken) {
-      return res.status(403).json({ error: "Invalid token" });
-    }
-
-    const matched =
-      (await verificationToken.compareToken(code.trim())) ||
-      code.trim() === TEMPORARY_OTP.trim();
-
-    if (!matched) {
-      return res.status(403).json({ error: "Invalid token" });
-    }
-
-    await User.findByIdAndUpdate(userId, {
-      verified: true,
-    });
-
-    await emailVerificationTokenDocument.findByIdAndDelete(
-      verificationToken._id
-    );
-
-    return res.json({ message: "Email is verified" });
-  } catch (error) {
-    console.error("Error verifying email:", error);
-    return res
-      .status(500)
-      .json({ error: "An unexpected error occurred. Please try again." });
+  if (typeof code !== "string" || code.trim() === "") {
+    throw new AppError("Verification code is required.", 403, "INVALID_VERIFICATION_CODE");
   }
-};
 
-export const ResendVerificationEmail: RequestHandler = async (
+  if (!verificationToken) {
+    throw new AppError("Invalid token", 403, "INVALID_VERIFICATION_TOKEN");
+  }
+
+  const payload = verifyAuthToken(verificationToken, "email-verification");
+
+  if (userId && payload.userId !== userId) {
+    throw new AppError("Invalid token", 403, "INVALID_VERIFICATION_TOKEN");
+  }
+
+  if (!payload.codeHash) {
+    throw new AppError("Invalid token", 403, "INVALID_VERIFICATION_TOKEN");
+  }
+
+  const matched = await compareEmailCode(code.trim(), payload.codeHash);
+
+  if (!matched) {
+    throw new AppError("Invalid token", 403, "INVALID_VERIFICATION_TOKEN");
+  }
+
+  await User.findByIdAndUpdate(payload.userId, {
+    verified: true,
+  });
+
+  return sendSuccess(res, null, 200, "Email is verified");
+});
+
+export const ResendVerificationEmail = asyncHandler(async (
   req: VerifyEmailrequest,
   res
 ) => {
   const { userId } = req.body;
 
   if (!mongoose.isValidObjectId(userId)) {
-    return res.status(403).json({ error: "Invalid request!" });
+    throw new AppError("Invalid request.", 403, "INVALID_REQUEST");
   }
 
   const user = await User.findById(userId);
   if (!user) {
-    return res.status(404).json({ error: "User not found!" });
+    throw new AppError("User not found.", 404, "USER_NOT_FOUND");
   }
 
-  await emailVerificationTokenDocument.findOneAndDelete({
-    owner: userId,
-  });
-
   const token = generateToken(6);
+  const verificationToken = signEmailVerificationToken(
+    user._id.toString(),
+    await hashEmailCode(token),
+  );
 
-  await emailVerificationTokenDocument.create({
-    owner: userId,
-    token,
-  });
-
-  sendVerificationMail(token, {
+  await sendVerificationMail(token, {
     name: user.userName,
     email: user.email,
     userId: user._id.toString(),
   });
 
-  res.json({
-    message: "Please check your email for verification instructions.",
-  });
-};
+  return sendSuccess(res, {
+    verificationToken,
+  }, 200, "Please check your email for verification instructions.");
+});

@@ -14,4 +14,3 @@ export const TOKEN_KEY = normalizeEnvValue(env.TOKEN_KEY);
 
 export const VERIFICATIONEMAIL = ADMIN_MAIL || GMAIL_USER;
 export const PASSWORD_RESET_LINK = normalizeEnvValue(process.env.PASSWORD_RESET_LINK) || "http://localhost:1430";
-export const TEMPORARY_OTP = normalizeEnvValue(process.env.TEMPORARY_OTP) || "600000";

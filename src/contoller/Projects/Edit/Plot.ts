@@ -1,12 +1,10 @@
 import { RequestHandler } from "express";
 import { Plot } from "src/@types/Projects";
-import User from "../../../modals/userModal";
 import { Projects } from "../../../modals/Projects/index";
 import { Plots } from "../../../modals/Projects/Plots";
 
 export const EditPlot: RequestHandler = async (req: Plot, res) => {
   const {
-    userId,
     projectId,
     title,
     color,
@@ -15,21 +13,23 @@ export const EditPlot: RequestHandler = async (req: Plot, res) => {
     treatment,
     _id,
   } = req.body;
+  const userId = req.user.id.toString();
 
   try {
-    const project = await Projects.findById(projectId);
+    const project = await Projects.findOne({ _id: projectId, userId });
     const validPlot = await Plots.findOne({ projectId, _id, userId });
 
-    if (!project || project.userId.toString() !== userId) {
+    if (!project) {
       return res.status(404).json({ error: "Project not found!" });
     }
 
     if (!validPlot) {
       return res.status(404).json({ error: "Plot not found!" });
     }
-    const existingTitle = await Projects.findOne({
+    const existingTitle = await Plots.findOne({
       title,
       userId,
+      projectId,
       _id: { $ne: validPlot._id },
     });
 
@@ -63,8 +63,8 @@ export const EditPlot: RequestHandler = async (req: Plot, res) => {
       { new: true }
     );
 
-    res.status(201).json({ plot });
+    return res.status(201).json({ plot });
   } catch (error) {
-    res.status(500).json(req.body);
+    return res.status(500).json(req.body);
   }
 };

@@ -3,21 +3,13 @@ import { Projects } from "../../../modals/Projects";
 import { Plots } from "../../../modals/Projects/Plots";
 import { PlotNotes } from "../../../modals/Projects/Notes";
 
-interface DeleteProjectBody {
-  body: {
-    _id: string;
-    userId: string;
-    projectId?: string;
-    plotId?: string;
-  };
-}
-
 export const DeleteProject: RequestHandler = async (
-  req: DeleteProjectBody,
+  req,
   res,
 ) => {
   try {
-    const { _id, userId } = req.body;
+    const { _id } = req.body;
+    const userId = req.user.id;
 
     const project = await Projects.findOne({
       _id,
@@ -33,7 +25,7 @@ export const DeleteProject: RequestHandler = async (
     await Plots.deleteMany({ projectId: project._id });
     await PlotNotes.deleteMany({ projectId: project._id });
 
-    res.status(200).json({ message: "Project deleted successfully" });
+    return res.status(200).json({ message: "Project deleted successfully" });
   } catch (error) {
     console.error("Error deleting project:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -41,11 +33,12 @@ export const DeleteProject: RequestHandler = async (
 };
 
 export const DeletePlot: RequestHandler = async (
-  req: DeleteProjectBody,
+  req,
   res,
 ) => {
   try {
-    const { _id, userId, projectId } = req.body;
+    const { _id, projectId } = req.body;
+    const userId = req.user.id;
     const plot = await Plots.findOne({
       _id,
       userId,
@@ -59,7 +52,7 @@ export const DeletePlot: RequestHandler = async (
     await Plots.deleteOne({ _id: plot._id });
     await PlotNotes.deleteMany({ plotId: plot._id });
 
-    res.status(200).json({ message: "Plot deleted successfully" });
+    return res.status(200).json({ message: "Plot deleted successfully" });
   } catch (error) {
     console.error("Error deleting plot:", error);
     return res.status(500).json({ error: "Internal server error" });
@@ -67,11 +60,12 @@ export const DeletePlot: RequestHandler = async (
 };
 
 export const DeleteNote: RequestHandler = async (
-  req: DeleteProjectBody,
+  req,
   res,
 ) => {
   try {
-    const { _id, userId, projectId, plotId } = req.body;
+    const { _id, projectId, plotId } = req.body;
+    const userId = req.user.id;
     const note = await PlotNotes.findOne({
       _id,
       userId,
@@ -88,7 +82,7 @@ export const DeleteNote: RequestHandler = async (
     // Decrement the notesCount in the plot
     await Plots.findByIdAndUpdate(plotId, { $inc: { notesCount: -1 } });
 
-    res.status(200).json({ message: "Note deleted successfully" });
+    return res.status(200).json({ message: "Note deleted successfully" });
   } catch (error) {
     console.error("Error deleting note:", error);
     return res.status(500).json({ error: "Internal server error" });

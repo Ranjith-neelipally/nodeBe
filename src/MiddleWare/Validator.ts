@@ -1,5 +1,6 @@
 import { RequestHandler } from "express";
 import * as yup from "yup";
+import { AppError } from "../utils/AppError";
 
 export const validate = (schema: any): RequestHandler => {
   return async (req, res, next) => {
@@ -9,10 +10,6 @@ export const validate = (schema: any): RequestHandler => {
         : Object.keys(req.query || {}).length > 0
         ? req.query
         : req.params;
-
-    if (!data || Object.keys(data).length === 0) {
-      return res.status(400).json({ error: "Request data is empty" });
-    }
 
     const schemaToValidate = yup.object({
       data: schema,
@@ -24,14 +21,20 @@ export const validate = (schema: any): RequestHandler => {
       // normalize for downstream middlewares/controllers
       req.body = data;
 
-      next();
+      return next();
     } catch (error) {
       if (error instanceof yup.ValidationError) {
-        return res.status(422).json({ errors: error.errors });
+        return next(
+          new AppError(
+            "Validation failed.",
+            422,
+            "VALIDATION_ERROR",
+            error.errors,
+          ),
+        );
       }
 
-      console.error("Validation error:", error);
-      return res.status(500).json({ error: "Internal server error" });
+      return next(error);
     }
   };
 };

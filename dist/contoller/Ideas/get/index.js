@@ -16,10 +16,8 @@ exports.GetIdea = void 0;
 const Idea_1 = __importDefault(require("../../../modals/Idea"));
 const ideasQueryLimit = 15;
 const GetIdea = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { date, userId, limit, page } = Object.assign(Object.assign({}, req.query), req.params);
-    if (!userId) {
-        return res.status(400).json({ error: "User ID is required!" });
-    }
+    const { date, limit, page } = Object.assign(Object.assign({}, req.query), req.params);
+    const userId = req.user.id;
     try {
         let query = { userId };
         if (date) {
@@ -39,7 +37,7 @@ const GetIdea = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         return res.status(200).json({ userIdeas, page: pg, limit: lim });
     }
     catch (error) {
-        res.status(500).json({ error: error });
+        return res.status(500).json({ error: error });
     }
 });
 exports.GetIdea = GetIdea;

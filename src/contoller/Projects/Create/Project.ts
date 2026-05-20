@@ -1,12 +1,11 @@
 import { RequestHandler } from "express";
 import { Projects } from "../../../modals/Projects";
-import User from "../../../modals/userModal";
 import { Project } from "src/@types/Projects";
 
 export const CreateNewProject: RequestHandler = async (req: Project, res) => {
   try {
-    const { userId, title, plotsCount, replications, treatments, location } =
-      req.body;
+    const userId = req.user.id;
+    const { title, plotsCount, replications, treatments, location } = req.body;
     const exsitingTitle = await Projects.findOne({
       title: title,
       userId: userId,
@@ -23,7 +22,7 @@ export const CreateNewProject: RequestHandler = async (req: Project, res) => {
       treatmentsCount: treatments,
       location,
     });
-    res.status(201).json({ data });
+    return res.status(201).json({ data });
   } catch (error) {
     console.error("Error creating project:", error);
     return res.status(500).json({ error: "Internal server error" });

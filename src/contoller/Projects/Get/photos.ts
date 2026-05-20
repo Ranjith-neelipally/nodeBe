@@ -2,7 +2,7 @@ import { RequestHandler } from "express";
 import { PlotNotes } from "../../../modals/Projects/Notes";
 
 export const GetAllPhotos: RequestHandler = async (req, res, next) => {
-  const { userId } = req.query as { userId: string };
+  const userId = req.user.id;
 
   try {
     const notesWithPhotos = await PlotNotes.find({

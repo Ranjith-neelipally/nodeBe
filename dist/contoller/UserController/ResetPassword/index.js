@@ -13,33 +13,25 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GenerateResetPasswordLink = void 0;
-const resetPassword_1 = __importDefault(require("../../../modals/resetPassword"));
 const userModal_1 = __importDefault(require("../../../modals/userModal"));
-const crypto_1 = __importDefault(require("crypto"));
 const variables_1 = require("../../../utils/variables");
 const mail_1 = require("../../../utils/mail");
-const GenerateResetPasswordLink = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const authTokens_1 = require("../../../utils/authTokens");
+const asyncHandler_1 = require("../../../utils/asyncHandler");
+const apiResponse_1 = require("../../../utils/apiResponse");
+const resetMessage = "If the account exists, password reset instructions have been sent.";
+exports.GenerateResetPasswordLink = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email } = req.body;
     const user = yield userModal_1.default.findOne({ email });
     if (!user) {
-        return res.status(404).json({ error: "Account not found" });
+        return (0, apiResponse_1.sendSuccess)(res, null, 200, resetMessage);
     }
-    const resetToken = crypto_1.default.randomBytes(36).toString("hex");
-    yield resetPassword_1.default.create({
-        owner: user._id,
-        token: resetToken,
-    });
+    const resetToken = (0, authTokens_1.signPasswordResetToken)(user._id.toString());
     const resetLink = `${variables_1.PASSWORD_RESET_LINK}?token=${resetToken}&userId=${user._id}`;
-    try {
-        (0, mail_1.sendPasswordResetMail)({
-            name: user.userName,
-            email: user.email,
-            link: resetLink,
-        });
-        res.json({ resetLink: resetLink });
-    }
-    catch (error) {
-        res.json({ message: error });
-    }
-});
-exports.GenerateResetPasswordLink = GenerateResetPasswordLink;
+    yield (0, mail_1.sendPasswordResetMail)({
+        name: user.userName,
+        email: user.email,
+        link: resetLink,
+    });
+    return (0, apiResponse_1.sendSuccess)(res, null, 200, resetMessage);
+}));

@@ -6,8 +6,8 @@ const toDateString = (value: Date | string) =>
   new Date(value).toISOString().split("T")[0];
 
 export const GetAllPlots: RequestHandler = async (req, res) => {
-  const { userId, projectId } = req.query as {
-    userId?: string;
+  const userId = req.user.id;
+  const { projectId } = req.query as {
     projectId?: string;
   };
 
@@ -27,8 +27,8 @@ export const GetAllPlots: RequestHandler = async (req, res) => {
     const dates = [...new Set(plotNotes.map(({ createdAt }) => toDateString(createdAt)))]
       .sort((a, b) => b.localeCompare(a));
 
-    res.status(200).json({ data: plots, dates });
+    return res.status(200).json({ data: plots, dates });
   } catch (error) {
-    res.status(500).json({ error });
+    return res.status(500).json({ error });
   }
 };

@@ -5,13 +5,13 @@ import { Project } from "src/@types/Projects";
 export const EditProject: RequestHandler = async (req: Project, res) => {
   try {
     const {
-      userId,
       title,
       replications,
       treatments,
       location,
       _id,
     } = req.body;
+    const userId = req.user.id;
 
     const Project = await Projects.findOne({
       _id,
@@ -46,7 +46,7 @@ export const EditProject: RequestHandler = async (req: Project, res) => {
       },
       { new: true }
     );
-    res.status(201).json({ newProject });
+    return res.status(201).json({ newProject });
   } catch (error) {
     console.error("Error creating project:", error);
     return res.status(500).json({ error: "Internal server error" });

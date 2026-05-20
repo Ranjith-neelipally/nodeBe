@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Projects = exports.ProjectSchema = void 0;
 const mongoose_1 = require("mongoose");
+const metadata_1 = require("../../sync/metadata");
 exports.ProjectSchema = new mongoose_1.Schema({
     title: {
         type: String,
@@ -35,4 +36,5 @@ exports.ProjectSchema = new mongoose_1.Schema({
         default: 0,
     },
 }, { timestamps: true });
+(0, metadata_1.attachSyncMetadata)(exports.ProjectSchema);
 exports.Projects = (0, mongoose_1.model)("Projects", exports.ProjectSchema);

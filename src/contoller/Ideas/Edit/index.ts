@@ -3,7 +3,8 @@ import Ideas from "../../../modals/Idea";
 import { IdeasInterface } from "src/@types/notes";
 
 export const EditIdea: RequestHandler = async (req: IdeasInterface, res) => {
-  const { _id, idea: newIdea, userId, date } = req.body;
+  const { _id, idea: newIdea, date } = req.body;
+  const userId = req.user.id.toString();
   try {
     const idea = await Ideas.findById(_id);
 
@@ -21,8 +22,8 @@ export const EditIdea: RequestHandler = async (req: IdeasInterface, res) => {
     );
 
     const updatedIdea = await Ideas.findById(_id);
-    res.status(200).json({ idea: updatedIdea });
+    return res.status(200).json({ idea: updatedIdea });
   } catch (error) {
-    res.status(500).json({ error: error });
+    return res.status(500).json({ error: error });
   }
 };

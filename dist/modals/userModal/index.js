@@ -40,7 +40,23 @@ const userSchema = new mongoose_1.Schema({
             type: mongoose_1.Schema.Types.ObjectId,
         },
     ],
-    tokens: [String],
+    refreshTokens: [
+        {
+            token: {
+                type: String,
+                required: true,
+            },
+            device: String,
+            createdAt: {
+                type: Date,
+                default: Date.now,
+            },
+            expiresAt: {
+                type: Date,
+                required: true,
+            },
+        },
+    ],
 }, { timestamps: true });
 userSchema.pre("save", function (next) {
     return __awaiter(this, void 0, void 0, function* () {

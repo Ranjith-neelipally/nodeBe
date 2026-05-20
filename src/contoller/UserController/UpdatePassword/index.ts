@@ -1,31 +1,36 @@
-import { RequestHandler } from "express";
-import PasswordResetTokenDocument from "../../../modals/resetPassword";
 import User from "../../../modals/userModal";
 import { sendSuccessEmail } from "../../../utils/mail";
+import { AppError } from "../../../utils/AppError";
+import { asyncHandler } from "../../../utils/asyncHandler";
+import { sendSuccess } from "../../../utils/apiResponse";
 
-export const UpdatePassword: RequestHandler = async (req, res) => {
-  const { password, userId } = req.body;
+export const UpdatePassword = asyncHandler(async (req, res) => {
+  const { password } = req.body;
+  const userId = req.resetUserId;
+
+  if (!userId) {
+    throw new AppError("Unauthorised Access", 403, "UNAUTHORIZED");
+  }
 
   const user = await User.findById(userId);
 
   if (!user) {
-    return res.status(403).json({ error: "Unauthorised Access" });
+    throw new AppError("Unauthorised Access", 403, "UNAUTHORIZED");
   }
 
   const matched = await user.comparePassword(password);
 
   if (matched) {
-    res.status(422).json({ error: "new Passsword must be Unique!" });
+    throw new AppError("New password must be unique.", 422, "PASSWORD_REUSED");
   }
 
   user.password = password;
   await user.save();
 
-  await PasswordResetTokenDocument.findOneAndDelete({ owner: user._id });
-  sendSuccessEmail({
+  await sendSuccessEmail({
     name: user.userName,
     email: user.email
   });
 
-  res.status(200).json({ message: "Password Updated" });
-};
+  return sendSuccess(res, null, 200, "Password Updated");
+});

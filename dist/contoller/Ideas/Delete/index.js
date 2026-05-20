@@ -15,7 +15,8 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.DeleteIdea = void 0;
 const Idea_1 = __importDefault(require("../../../modals/Idea"));
 const DeleteIdea = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { _id, userId } = req.body;
+    const { _id } = req.body;
+    const userId = req.user.id;
     try {
         const idea = yield Idea_1.default.find({
             _id: _id,
@@ -25,10 +26,10 @@ const DeleteIdea = (req, res) => __awaiter(void 0, void 0, void 0, function* () 
             return res.status(404).json({ error: "Idea not found!" });
         }
         yield Idea_1.default.deleteOne({ _id: _id, userId: userId });
-        res.status(200).json({ message: "Idea deleted successfully!" });
+        return res.status(200).json({ message: "Idea deleted successfully!" });
     }
     catch (error) {
-        res.status(500).json({ error: error });
+        return res.status(500).json({ error: error });
     }
 });
 exports.DeleteIdea = DeleteIdea;

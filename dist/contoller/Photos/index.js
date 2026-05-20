@@ -14,7 +14,8 @@ const Notes_1 = require("../../modals/Projects/Notes");
 const Projects_1 = require("../../modals/Projects");
 const Plots_1 = require("../../modals/Projects/Plots");
 const GetPhotoDetails = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId, photoId } = req.query;
+    const userId = req.user.id;
+    const { photoId } = req.query;
     try {
         const Note = yield Notes_1.PlotNotes.findOne({ userId, "content.photoIds": photoId });
         if (!Note) {
@@ -38,6 +39,8 @@ const GetPhotoDetails = (req, res) => __awaiter(void 0, void 0, void 0, function
         };
         return res.status(200).json(response);
     }
-    catch (error) { }
+    catch (error) {
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
 });
 exports.GetPhotoDetails = GetPhotoDetails;

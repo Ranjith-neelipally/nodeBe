@@ -26,29 +26,12 @@ export const CreateUserSchema = yup.object().shape({
 
 export const TokenAndIdValidation = yup.object().shape({
   token: yup.string().trim().required("Invalid token!"),
-  userId: yup
-    .string()
-    .transform(function (value) {
-      if (this.isType(value) && isValidObjectId(value)) {
-        return value;
-      }
-      return "";
-    })
-    .required("UserId is invalid or missing."),
+  userId: yup.string().notRequired(),
 });
 
 export const PasswordCheckSchema = yup.object().shape({
   token: yup.string().trim().required("Invalid token!"),
-  userId: yup
-    .string()
-    .transform(function (value) {
-      if (this.isType(value) && isValidObjectId(value)) {
-        return value;
-      }
-      return "";
-    })
-
-    .required("Invalid userId"),
+  userId: yup.string().notRequired(),
   password: yup
     .string()
     .trim()
@@ -72,15 +55,7 @@ export const LoginValidationSchema = yup.object().shape({
 });
 
 export const CreateIdeaSchema = yup.object().shape({
-  userId: yup
-    .string()
-    .transform(function (value) {
-      if (this.isType(value) && isValidObjectId(value)) {
-        return value;
-      }
-      return "";
-    })
-    .required("UserId is invalid or missing."),
+  userId: yup.string().notRequired(),
   idea: yup
     .string()
     .trim()
@@ -99,15 +74,7 @@ export const editIdeaSchema = yup.object().shape({
       return "";
     })
     .required("Idea id is invalid or missing."),
-  userId: yup
-    .string()
-    .transform(function (value) {
-      if (this.isType(value) && isValidObjectId(value)) {
-        return value;
-      }
-      return "";
-    })
-    .required("UserId is invalid or missing."),
+  userId: yup.string().notRequired(),
   idea: yup
     .string()
     .trim()
@@ -117,15 +84,7 @@ export const editIdeaSchema = yup.object().shape({
 });
 
 export const GetIdeaSchema = yup.object().shape({
-  userId: yup
-    .string()
-    .transform(function (value) {
-      if (this.isType(value) && isValidObjectId(value)) {
-        return value;
-      }
-      return "";
-    })
-    .required("UserId is invalid or missing."),
+  userId: yup.string().notRequired(),
   date: yup.date().notRequired(),
   limit: yup
     .number()
@@ -145,15 +104,7 @@ export const DeleteIdeaSchema = yup.object().shape({
       return "";
     })
     .required("Idea id is invalid or missing."),
-  userId: yup
-    .string()
-    .transform(function (value) {
-      if (this.isType(value) && isValidObjectId(value)) {
-        return value;
-      }
-      return "";
-    })
-    .required("UserId is invalid or missing."),
+  userId: yup.string().notRequired(),
 });
 
 export const ProfileVerificationCodeSchema = yup.object().shape({
@@ -167,4 +118,5 @@ export const ProfileVerificationCodeSchema = yup.object().shape({
     })
     .required("UserId is invalid or missing."),
   code: yup.string().trim().required("Verification code is required"),
+  verificationToken: yup.string().trim().required("Verification token is required"),
 });

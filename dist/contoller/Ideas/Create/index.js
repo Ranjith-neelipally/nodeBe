@@ -15,17 +15,18 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateNewIdea = void 0;
 const Idea_1 = __importDefault(require("../../../modals/Idea"));
 const CreateNewIdea = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId, idea, date } = req.body;
+    const { idea, date } = req.body;
+    const userId = req.user.id;
     try {
         const newNote = yield Idea_1.default.create({
             userId,
             idea,
             date,
         });
-        res.status(201).json({ newNote });
+        return res.status(201).json({ newNote });
     }
     catch (error) {
-        res.status(500).json({ error: error });
+        return res.status(500).json({ error: error });
     }
 });
 exports.CreateNewIdea = CreateNewIdea;

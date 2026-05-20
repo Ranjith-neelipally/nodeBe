@@ -13,7 +13,8 @@ exports.EditProject = void 0;
 const Projects_1 = require("../../../modals/Projects");
 const EditProject = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
-        const { userId, title, replications, treatments, location, _id, } = req.body;
+        const { title, replications, treatments, location, _id, } = req.body;
+        const userId = req.user.id;
         const Project = yield Projects_1.Projects.findOne({
             _id,
             userId,
@@ -39,7 +40,7 @@ const EditProject = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 location,
             },
         }, { new: true });
-        res.status(201).json({ newProject });
+        return res.status(201).json({ newProject });
     }
     catch (error) {
         console.error("Error creating project:", error);

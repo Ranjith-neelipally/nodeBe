@@ -4,18 +4,15 @@ import Ideas from "../../../modals/Idea";
 const ideasQueryLimit = 15;
 
 export const GetIdea: RequestHandler = async (req, res) => {
-  const { date, userId, limit, page } = {
+  const { date, limit, page } = {
     ...req.query,
     ...req.params,
   } as {
-    userId?: string;
     date?: string;
     limit?: string | number;
     page?: string | number;
   };
-  if (!userId) {
-    return res.status(400).json({ error: "User ID is required!" });
-  }
+  const userId = req.user.id;
 
   try {
     let query: any = { userId };
@@ -35,6 +32,6 @@ export const GetIdea: RequestHandler = async (req, res) => {
     const userIdeas = await ideasQuery;
     return res.status(200).json({ userIdeas, page: pg, limit: lim });
   } catch (error) {
-    res.status(500).json({ error: error });
+    return res.status(500).json({ error: error });
   }
 };

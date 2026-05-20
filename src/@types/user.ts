@@ -1,4 +1,5 @@
 import { Request } from "express";
+import { SyncHeaderContext } from "../sync/types";
 
 export interface CreateUser extends Request {
   body: {
@@ -12,6 +13,7 @@ export interface VerifyEmail extends Request {
   body: {
     userId: string;
     code: string;
+    verificationToken: string;
   };
 }
 
@@ -26,7 +28,10 @@ declare global {
         email?: string;
       };
 
-      token: string;
+      token?: string;
+      resetUserId?: string;
+      requestId?: string;
+      syncContext?: SyncHeaderContext;
     }
   }
 }

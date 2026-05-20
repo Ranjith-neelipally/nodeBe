@@ -17,5 +17,6 @@ const errorLogSchema = new mongoose_1.default.Schema({
     headers: mongoose_1.default.Schema.Types.Mixed,
     email: String,
     body: mongoose_1.default.Schema.Types.Mixed,
+    requestId: String,
 }, { timestamps: true });
 exports.ErrorLog = mongoose_1.default.model("ErrorLog", errorLogSchema);

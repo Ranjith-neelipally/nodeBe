@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PlotNotes = exports.PlotNotesSchema = void 0;
 const mongoose_1 = require("mongoose");
+const metadata_1 = require("../../../sync/metadata");
 const PlotNoteItemSchema = new mongoose_1.Schema({
     note: {
         type: [String],
@@ -36,5 +37,22 @@ exports.PlotNotesSchema = new mongoose_1.Schema({
         required: true,
     },
     ProjectTitle: String,
+    isConflict: {
+        type: Boolean,
+        default: false,
+        index: true,
+    },
+    conflictGroupId: {
+        type: String,
+        default: null,
+        trim: true,
+        index: true,
+    },
+    conflictReason: {
+        type: String,
+        default: null,
+        trim: true,
+    },
 }, { timestamps: true });
+(0, metadata_1.attachSyncMetadata)(exports.PlotNotesSchema);
 exports.PlotNotes = (0, mongoose_1.model)("PlotNotes", exports.PlotNotesSchema);

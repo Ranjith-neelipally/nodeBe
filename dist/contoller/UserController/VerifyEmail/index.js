@@ -13,67 +13,55 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ResendVerificationEmail = exports.VerifyEmail = void 0;
-const userVerification_1 = __importDefault(require("../../../modals/userVerification"));
 const userModal_1 = __importDefault(require("../../../modals/userModal"));
 const helpers_1 = require("../../../utils/helpers");
 const mail_1 = require("../../../utils/mail");
-const variables_1 = require("../../../utils/variables");
+const authTokens_1 = require("../../../utils/authTokens");
 const mongoose_1 = __importDefault(require("mongoose"));
-const VerifyEmail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const { userId, code } = req.body;
-        if (typeof code !== "string" || code.trim() === "") {
-            return res.status(403).json({ error: `Code must be a valid string not ${typeof code} and ${code}` });
-        }
-        const verificationToken = yield userVerification_1.default.findOne({
-            owner: userId,
-        });
-        if (!verificationToken) {
-            return res.status(403).json({ error: "Invalid token" });
-        }
-        const matched = (yield verificationToken.compareToken(code.trim())) ||
-            code.trim() === variables_1.TEMPORARY_OTP.trim();
-        if (!matched) {
-            return res.status(403).json({ error: "Invalid token" });
-        }
-        yield userModal_1.default.findByIdAndUpdate(userId, {
-            verified: true,
-        });
-        yield userVerification_1.default.findByIdAndDelete(verificationToken._id);
-        return res.json({ message: "Email is verified" });
+const AppError_1 = require("../../../utils/AppError");
+const asyncHandler_1 = require("../../../utils/asyncHandler");
+const apiResponse_1 = require("../../../utils/apiResponse");
+exports.VerifyEmail = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { userId, code, verificationToken } = req.body;
+    if (typeof code !== "string" || code.trim() === "") {
+        throw new AppError_1.AppError("Verification code is required.", 403, "INVALID_VERIFICATION_CODE");
     }
-    catch (error) {
-        console.error("Error verifying email:", error);
-        return res
-            .status(500)
-            .json({ error: "An unexpected error occurred. Please try again." });
+    if (!verificationToken) {
+        throw new AppError_1.AppError("Invalid token", 403, "INVALID_VERIFICATION_TOKEN");
     }
-});
-exports.VerifyEmail = VerifyEmail;
-const ResendVerificationEmail = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const payload = (0, authTokens_1.verifyAuthToken)(verificationToken, "email-verification");
+    if (userId && payload.userId !== userId) {
+        throw new AppError_1.AppError("Invalid token", 403, "INVALID_VERIFICATION_TOKEN");
+    }
+    if (!payload.codeHash) {
+        throw new AppError_1.AppError("Invalid token", 403, "INVALID_VERIFICATION_TOKEN");
+    }
+    const matched = yield (0, authTokens_1.compareEmailCode)(code.trim(), payload.codeHash);
+    if (!matched) {
+        throw new AppError_1.AppError("Invalid token", 403, "INVALID_VERIFICATION_TOKEN");
+    }
+    yield userModal_1.default.findByIdAndUpdate(payload.userId, {
+        verified: true,
+    });
+    return (0, apiResponse_1.sendSuccess)(res, null, 200, "Email is verified");
+}));
+exports.ResendVerificationEmail = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { userId } = req.body;
     if (!mongoose_1.default.isValidObjectId(userId)) {
-        return res.status(403).json({ error: "Invalid request!" });
+        throw new AppError_1.AppError("Invalid request.", 403, "INVALID_REQUEST");
     }
     const user = yield userModal_1.default.findById(userId);
     if (!user) {
-        return res.status(404).json({ error: "User not found!" });
+        throw new AppError_1.AppError("User not found.", 404, "USER_NOT_FOUND");
     }
-    yield userVerification_1.default.findOneAndDelete({
-        owner: userId,
-    });
     const token = (0, helpers_1.generateToken)(6);
-    yield userVerification_1.default.create({
-        owner: userId,
-        token,
-    });
-    (0, mail_1.sendVerificationMail)(token, {
+    const verificationToken = (0, authTokens_1.signEmailVerificationToken)(user._id.toString(), yield (0, authTokens_1.hashEmailCode)(token));
+    yield (0, mail_1.sendVerificationMail)(token, {
         name: user.userName,
         email: user.email,
         userId: user._id.toString(),
     });
-    res.json({
-        message: "Please check your email for verification instructions.",
-    });
-});
-exports.ResendVerificationEmail = ResendVerificationEmail;
+    return (0, apiResponse_1.sendSuccess)(res, {
+        verificationToken,
+    }, 200, "Please check your email for verification instructions.");
+}));

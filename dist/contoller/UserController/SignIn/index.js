@@ -13,48 +13,47 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SignIn = void 0;
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const userModal_1 = __importDefault(require("../../../modals/userModal"));
-const variables_1 = require("../../../utils/variables");
-const SignIn = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+const AppError_1 = require("../../../utils/AppError");
+const asyncHandler_1 = require("../../../utils/asyncHandler");
+const authTokens_1 = require("../../../utils/authTokens");
+const apiResponse_1 = require("../../../utils/apiResponse");
+exports.SignIn = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { email, password } = req.body;
-    try {
-        const user = yield userModal_1.default.findOne({ email });
-        if (!user) {
-            res.status(403).json({ error: "User/Password mismatch" });
-        }
-        else {
-            const matched = yield user.comparePassword(password);
-            if (!matched) {
-                res.status(403).json({ error: "User/Password mismatch" });
-            }
-            else {
-                if (!user.verified) {
-                    return res.status(403).json({
-                        error: "Profile not verified",
-                        message: "Please verify your email before signing in. Check your email for verification instructions.",
-                        verified: false
-                    });
-                }
-                const jwdToken = jsonwebtoken_1.default.sign({ userId: user._id }, variables_1.TOKEN_KEY);
-                user.tokens.push(jwdToken);
-                yield user.save();
-                res.json({
-                    profile: {
-                        id: user._id,
-                        name: user.userName,
-                        verified: user.verified,
-                        projects: user.ProjectIds,
-                        email: user.email,
-                        createdAt: user.createdAt || user._id.getTimestamp(),
-                    },
-                    token: jwdToken,
-                });
-            }
-        }
+    const user = yield userModal_1.default.findOne({ email });
+    if (!user) {
+        throw new AppError_1.AppError("User/Password mismatch", 403, "INVALID_CREDENTIALS");
     }
-    catch (error) {
-        res.status(500).json({ error: error });
+    const matched = yield user.comparePassword(password);
+    if (!matched) {
+        throw new AppError_1.AppError("User/Password mismatch", 403, "INVALID_CREDENTIALS");
     }
-});
-exports.SignIn = SignIn;
+    if (!user.verified) {
+        throw new AppError_1.AppError("Please verify your email before signing in. Check your email for verification instructions.", 403, "PROFILE_NOT_VERIFIED", { verified: false });
+    }
+    const accessToken = (0, authTokens_1.signAccessToken)(user._id.toString());
+    const refreshToken = (0, authTokens_1.signRefreshToken)(user._id.toString());
+    user.refreshTokens = (user.refreshTokens || []).filter((stored) => new Date(stored.expiresAt).getTime() > Date.now());
+    user.refreshTokens.push({
+        token: yield (0, authTokens_1.hashRefreshToken)(refreshToken),
+        device: typeof req.headers["user-agent"] === "string"
+            ? req.headers["user-agent"]
+            : undefined,
+        createdAt: new Date(),
+        expiresAt: (0, authTokens_1.getRefreshTokenExpiry)(),
+    });
+    yield user.save();
+    return (0, apiResponse_1.sendSuccess)(res, {
+        profile: {
+            id: user._id,
+            name: user.userName,
+            verified: user.verified,
+            projects: user.ProjectIds,
+            email: user.email,
+            createdAt: user.createdAt || user._id.getTimestamp(),
+        },
+        accessToken,
+        refreshToken,
+        token: accessToken,
+    });
+}));

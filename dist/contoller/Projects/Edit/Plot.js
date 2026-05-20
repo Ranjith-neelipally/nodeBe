@@ -13,19 +13,21 @@ exports.EditPlot = void 0;
 const index_1 = require("../../../modals/Projects/index");
 const Plots_1 = require("../../../modals/Projects/Plots");
 const EditPlot = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId, projectId, title, color, notesCount, replication, treatment, _id, } = req.body;
+    const { projectId, title, color, notesCount, replication, treatment, _id, } = req.body;
+    const userId = req.user.id.toString();
     try {
-        const project = yield index_1.Projects.findById(projectId);
+        const project = yield index_1.Projects.findOne({ _id: projectId, userId });
         const validPlot = yield Plots_1.Plots.findOne({ projectId, _id, userId });
-        if (!project || project.userId.toString() !== userId) {
+        if (!project) {
             return res.status(404).json({ error: "Project not found!" });
         }
         if (!validPlot) {
             return res.status(404).json({ error: "Plot not found!" });
         }
-        const existingTitle = yield index_1.Projects.findOne({
+        const existingTitle = yield Plots_1.Plots.findOne({
             title,
             userId,
+            projectId,
             _id: { $ne: validPlot._id },
         });
         if (existingTitle) {
@@ -47,10 +49,10 @@ const EditPlot = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 plotIndex: [replication, treatment],
             },
         }, { new: true });
-        res.status(201).json({ plot });
+        return res.status(201).json({ plot });
     }
     catch (error) {
-        res.status(500).json(req.body);
+        return res.status(500).json(req.body);
     }
 });
 exports.EditPlot = EditPlot;

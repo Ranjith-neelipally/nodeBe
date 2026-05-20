@@ -4,8 +4,6 @@ import { Plots } from "../modals/Projects/Plots";
 import { PlotNotes } from "../modals/Projects/Notes";
 import Ideas from "../modals/Idea";
 import User from "../modals/userModal";
-import PasswordResetTokenDocument from "../modals/resetPassword";
-import emailVerificationToken from "../modals/userVerification";
 import Treatments from "../modals/Treatments";
 
 const router = Router();
@@ -805,14 +803,6 @@ const modalUpdates = [
   {
     model: User,
     update: { bio: "", profilePhotoUrl: "" },
-  },
-  {
-    model: PasswordResetTokenDocument,
-    update: {},
-  },
-  {
-    model: emailVerificationToken,
-    update: {},
   },
 ];
 

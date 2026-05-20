@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Plots = exports.PlotSchema = void 0;
 const mongoose_1 = require("mongoose");
+const metadata_1 = require("../../../sync/metadata");
 exports.PlotSchema = new mongoose_1.Schema({
     projectId: {
         type: mongoose_1.Types.ObjectId,
@@ -40,4 +41,5 @@ exports.PlotSchema = new mongoose_1.Schema({
         default: 0,
     },
 }, { timestamps: true });
+(0, metadata_1.attachSyncMetadata)(exports.PlotSchema);
 exports.Plots = (0, mongoose_1.model)("Plots", exports.PlotSchema);

@@ -14,7 +14,8 @@ const Notes_1 = require("../../../modals/Projects/Notes");
 const defaultQueryLimit = 15;
 const toDateString = (value) => new Date(value).toISOString().split("T")[0];
 const GetNotes = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { userId, projectId, plotId, date, limit, page } = req.query;
+    const userId = req.user.id;
+    const { projectId, plotId, date, limit, page, skip } = req.query;
     try {
         let lim = defaultQueryLimit;
         if (limit && !isNaN(Number(limit))) {
@@ -23,6 +24,9 @@ const GetNotes = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         let pg = 1;
         if (page && !isNaN(Number(page))) {
             pg = Math.max(1, Number(page));
+        }
+        else if (skip && !isNaN(Number(skip))) {
+            pg = Math.floor(Number(skip) / lim) + 1;
         }
         const query = {
             userId,

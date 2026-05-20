@@ -1,36 +1,37 @@
-import { RequestHandler } from "express";
-
 import { CreateUser } from "src/@types/user";
 import User from "../../../modals/userModal";
 import { generateToken } from "../../../utils/helpers";
 import { sendVerificationMail } from "../../../utils/mail";
-import emailVerificationToken from "../../../modals/userVerification";
+import {
+  hashEmailCode,
+  signEmailVerificationToken,
+} from "../../../utils/authTokens";
+import { asyncHandler } from "../../../utils/asyncHandler";
+import { sendSuccess } from "../../../utils/apiResponse";
 
 
-export const CreateNewUser: RequestHandler = async (req: CreateUser, res) => {
+export const CreateNewUser = asyncHandler(async (req: CreateUser, res) => {
   const { email, password, userName } = req.body;
-  try {
-    const user = await User.create({
-      email,
-      password,
-      userName,
-    });
+  const user = await User.create({
+    email,
+    password,
+    userName,
+  });
 
-    const tempToken = generateToken(6);
+  const tempToken = generateToken(6);
+  const verificationToken = signEmailVerificationToken(
+    user._id.toString(),
+    await hashEmailCode(tempToken),
+  );
 
-    await emailVerificationToken.create({
-      owner: user._id,
-      token: tempToken,
-    });
+  await sendVerificationMail(tempToken, {
+    email,
+    name: userName,
+    userId: user._id.toString(),
+  });
 
-    sendVerificationMail(tempToken, {
-      email,
-      name: userName,
-      userId: user._id.toString(),
-    });
-
-    res.status(201).json({ user_id: user._id });
-  } catch (error) {
-    res.json({ error: error });
-  }
-};
+  return sendSuccess(res, {
+    user_id: user._id,
+    verificationToken,
+  }, 201);
+});

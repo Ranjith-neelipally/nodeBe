@@ -4,6 +4,7 @@ import { Plots } from "../../../modals/Projects/Plots";
 
 export const EditNote: RequestHandler = async (req, res) => {
   const { projectId, plotId, noteId, content, photoIds, title } = req.body;
+  const userId = req.user.id;
 
   if (typeof content === "undefined" && typeof photoIds === "undefined" && typeof title === "undefined") {
     return res
@@ -12,7 +13,7 @@ export const EditNote: RequestHandler = async (req, res) => {
   }
 
   try {
-    const validPlot = await Plots.findOne({ _id: plotId, projectId });
+    const validPlot = await Plots.findOne({ _id: plotId, projectId, userId });
     if (!validPlot) {
       return res
         .status(400)
@@ -35,6 +36,7 @@ export const EditNote: RequestHandler = async (req, res) => {
         _id: noteId,
         projectId,
         plotId,
+        userId,
       },
       { $set: updateObj },
       { new: true },
@@ -44,11 +46,11 @@ export const EditNote: RequestHandler = async (req, res) => {
       return res.status(404).json({ error: "Note not found!" });
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       message: "Note updated successfully",
       updated,
     });
   } catch (error) {
-    res.status(500).json({ error });
+    return res.status(500).json({ error });
   }
 };

@@ -7,9 +7,7 @@ const toDateString = (value: Date | string) =>
   new Date(value).toISOString().split("T")[0];
 
 export const GetAllProjects: RequestHandler = async (req, res) => {
-  const { userId } = req.query as {
-    userId?: string;
-  };
+  const userId = req.user.id;
   try {
     const projects = await Projects.find({ userId: userId });
 
@@ -63,8 +61,8 @@ export const GetAllProjects: RequestHandler = async (req, res) => {
     const dates = [...new Set(projectNotes.map(({ createdAt }) => toDateString(createdAt)))]
       .sort((a, b) => b.localeCompare(a));
 
-    res.status(200).json({ data: projectsWithColors, dates });
+    return res.status(200).json({ data: projectsWithColors, dates });
   } catch (error) {
-    res.status(500).json({ error: error });
+    return res.status(500).json({ error: error });
   }
 };

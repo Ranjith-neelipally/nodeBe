@@ -14,25 +14,22 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GetUser = void 0;
 const userModal_1 = __importDefault(require("../../../modals/userModal"));
-const GetUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    try {
-        const user = yield userModal_1.default.findById(req.user.id);
-        if (!user) {
-            return res.status(404).json({ error: "User not found" });
-        }
-        res.status(200).json({
-            profile: {
-                id: user._id,
-                name: user.userName,
-                verified: user.verified,
-                projects: user.ProjectIds,
-                email: user.email,
-                createdAt: user.createdAt || user._id.getTimestamp(),
-            },
-        });
+const AppError_1 = require("../../../utils/AppError");
+const asyncHandler_1 = require("../../../utils/asyncHandler");
+const apiResponse_1 = require("../../../utils/apiResponse");
+exports.GetUser = (0, asyncHandler_1.asyncHandler)((req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const user = yield userModal_1.default.findById(req.user.id);
+    if (!user) {
+        throw new AppError_1.AppError("User not found.", 404, "USER_NOT_FOUND");
     }
-    catch (error) {
-        res.status(500).json({ error: "Internal server error" });
-    }
-});
-exports.GetUser = GetUser;
+    return (0, apiResponse_1.sendSuccess)(res, {
+        profile: {
+            id: user._id,
+            name: user.userName,
+            verified: user.verified,
+            projects: user.ProjectIds,
+            email: user.email,
+            createdAt: user.createdAt || user._id.getTimestamp(),
+        },
+    });
+}));

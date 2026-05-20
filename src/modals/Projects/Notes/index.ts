@@ -1,4 +1,5 @@
 import { Schema, Types, model } from "mongoose";
+import { attachSyncMetadata } from "../../../sync/metadata";
 
 const PlotNoteItemSchema = new Schema(
   {
@@ -44,8 +45,26 @@ export const PlotNotesSchema = new Schema(
     },
 
     ProjectTitle: String,
+    isConflict: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    conflictGroupId: {
+      type: String,
+      default: null,
+      trim: true,
+      index: true,
+    },
+    conflictReason: {
+      type: String,
+      default: null,
+      trim: true,
+    },
   },
   { timestamps: true },
 );
+
+attachSyncMetadata(PlotNotesSchema);
 
 export const PlotNotes = model("PlotNotes", PlotNotesSchema);

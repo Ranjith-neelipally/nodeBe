@@ -5,11 +5,13 @@ import { Plots } from "../../../modals/Projects/Plots";
 
 export const CreateNote: RequestHandler = async (req, res) => {
   try {
-    let { projectId, plotId, userId, content, photoIds, title } = req.body;
+    const userId = req.user.id;
+    const { projectId, plotId, content, photoIds, title } = req.body;
 
     const validPlot = await Plots.findOne({
       _id: plotId,
       projectId: projectId,
+      userId,
     });
 
     if (!validPlot) {
@@ -33,8 +35,8 @@ export const CreateNote: RequestHandler = async (req, res) => {
     // Update the plot's notesCount
     await Plots.findByIdAndUpdate(plotId, { $inc: { notesCount: 1 } });
 
-    res.json(newNote);
+    return res.json(newNote);
   } catch (err) {
-    res.status(500).json({ error: err });
+    return res.status(500).json({ error: err });
   }
 };

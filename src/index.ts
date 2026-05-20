@@ -5,19 +5,23 @@ import {
   ProjectsRouter,
   IdeasRouter,
   PhotosRouter,
+  SyncRouter,
   RefreshModalsRouter,
 } from "./routers";
 import { IgnoreFavIcon } from "./MiddleWare/favicon";
 import { HomeTemplate } from "./templates/home";
-import { ValidateUserMiddleware } from "./MiddleWare/user";
 import { verifyLoginToken } from "./MiddleWare/auth";
 import { requestContextMiddleware } from "./MiddleWare/requestContext";
+import { attachSyncContext } from "./MiddleWare/syncContext";
 import { globalErrorHandler, setupProcessErrorHandlers } from "./MiddleWare/errorHandler";
+import { AppError } from "./utils/AppError";
 import dbConnect from "./db";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(requestContextMiddleware);
+app.use(attachSyncContext);
 
 void dbConnect().catch((error) => {
   console.error("✗ Initial database connection failed:", error);
@@ -28,14 +32,11 @@ void dbConnect().catch((error) => {
 app.use(async (req, res, next) => {
   try {
     await dbConnect();
-    next();
+    return next();
   } catch (error) {
-    console.error("✗ Database connection unavailable for request:", error);
-    return res.status(503).json({ error: "Database not connected" });
+    return next(new AppError("Database not connected.", 503, "DATABASE_UNAVAILABLE"));
   }
 });
-
-app.use(requestContextMiddleware);
 
 app.use(IgnoreFavIcon);
 
@@ -49,10 +50,15 @@ app.get("/", (req, res) => {
 });
 
 app.use("/auth", AuthRouter);
-app.use("/projects", ValidateUserMiddleware, verifyLoginToken, ProjectsRouter);
-app.use("/ideas", ValidateUserMiddleware, verifyLoginToken, IdeasRouter);
-app.use("/photos", ValidateUserMiddleware, verifyLoginToken, PhotosRouter);
+app.use("/projects", verifyLoginToken, ProjectsRouter);
+app.use("/ideas", verifyLoginToken, IdeasRouter);
+app.use("/photos", verifyLoginToken, PhotosRouter);
+app.use("/sync", verifyLoginToken, SyncRouter);
 app.use("/admin", RefreshModalsRouter);
+
+app.use((req, res, next) => {
+  next(new AppError("Route not found.", 404, "NOT_FOUND"));
+});
 
 app.use(globalErrorHandler);
 
@@ -65,3 +71,4 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export default app;
+
