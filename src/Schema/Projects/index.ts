@@ -336,6 +336,14 @@ export const GetAllProjectsSchema = yup.object().shape({
   userId: yup.string().notRequired(),
 });
 
+export const CheckProjectTitleExistsSchema = yup.object().shape({
+  title: yup
+    .string()
+    .trim()
+    .required("Project title is required")
+    .max(100, "Project title is too long"),
+});
+
 export const GetAllPlotsSchema = yup.object().shape({
   userId: yup.string().transform(function (value) {
     if (this.isType(value) && isValidObjectId(value)) {

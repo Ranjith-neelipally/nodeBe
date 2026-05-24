@@ -13,6 +13,7 @@ import {
   GetAllPlots,
   GetNotes,
   GetAllPhotos,
+  CheckProjectTitleExists,
 } from "../../contoller/Projects";
 import {
   CreateProjectSchema,
@@ -25,6 +26,7 @@ import {
   DeletePlotSchema,
   DeleteNoteSchema,
   GetAllProjectsSchema,
+  CheckProjectTitleExistsSchema,
   GetAllPlotsSchema,
   GetNoteSchema,
 } from "../../Schema/Projects";
@@ -45,6 +47,11 @@ projectsRouter.delete("/plot", validate(DeletePlotSchema), DeletePlot);
 projectsRouter.delete("/note", validate(DeleteNoteSchema), DeleteNote);
 
 projectsRouter.get("", validate(GetAllProjectsSchema), GetAllProjects);
+projectsRouter.get(
+  "/title-exists",
+  validate(CheckProjectTitleExistsSchema),
+  CheckProjectTitleExists
+);
 projectsRouter.get("/plot", validate(GetAllPlotsSchema), GetAllPlots);
 projectsRouter.get("/note", validate(GetNoteSchema), GetNotes);
 projectsRouter.get("/photos", GetAllPhotos);

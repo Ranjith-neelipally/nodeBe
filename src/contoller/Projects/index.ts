@@ -9,6 +9,7 @@ import { GetAllProjects } from "./Get/projects";
 import { GetAllPlots } from "./Get/Plots";
 import { GetNotes } from "./Get/note";
 import { GetAllPhotos } from "./Get/photos";
+import { CheckProjectTitleExists } from "./Get/titleExists";
 
 export {
   CreateNewProject,
@@ -21,6 +22,7 @@ export {
   DeletePlot,
   DeleteNote,
   GetAllProjects,
+  CheckProjectTitleExists,
   GetAllPlots,
   GetNotes,
   GetAllPhotos,
