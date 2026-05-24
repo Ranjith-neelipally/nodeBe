@@ -15,6 +15,7 @@ projectsRouter.delete("", (0, Validator_1.validate)(Projects_2.DeleteProjectSche
 projectsRouter.delete("/plot", (0, Validator_1.validate)(Projects_2.DeletePlotSchema), Projects_1.DeletePlot);
 projectsRouter.delete("/note", (0, Validator_1.validate)(Projects_2.DeleteNoteSchema), Projects_1.DeleteNote);
 projectsRouter.get("", (0, Validator_1.validate)(Projects_2.GetAllProjectsSchema), Projects_1.GetAllProjects);
+projectsRouter.get("/title-exists", (0, Validator_1.validate)(Projects_2.CheckProjectTitleExistsSchema), Projects_1.CheckProjectTitleExists);
 projectsRouter.get("/plot", (0, Validator_1.validate)(Projects_2.GetAllPlotsSchema), Projects_1.GetAllPlots);
 projectsRouter.get("/note", (0, Validator_1.validate)(Projects_2.GetNoteSchema), Projects_1.GetNotes);
 projectsRouter.get("/photos", Projects_1.GetAllPhotos);

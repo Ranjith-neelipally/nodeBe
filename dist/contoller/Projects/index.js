@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetAllPhotos = exports.GetNotes = exports.GetAllPlots = exports.GetAllProjects = exports.DeleteNote = exports.DeletePlot = exports.DeleteProject = exports.EditNote = exports.EditPlot = exports.EditProject = exports.CreateNote = exports.CreatePlots = exports.CreateNewProject = void 0;
+exports.GetAllPhotos = exports.GetNotes = exports.GetAllPlots = exports.CheckProjectTitleExists = exports.GetAllProjects = exports.DeleteNote = exports.DeletePlot = exports.DeleteProject = exports.EditNote = exports.EditPlot = exports.EditProject = exports.CreateNote = exports.CreatePlots = exports.CreateNewProject = void 0;
 const Project_1 = require("./Create/Project");
 Object.defineProperty(exports, "CreateNewProject", { enumerable: true, get: function () { return Project_1.CreateNewProject; } });
 const Plot_1 = require("./Create/Plot");
@@ -25,3 +25,5 @@ const note_1 = require("./Get/note");
 Object.defineProperty(exports, "GetNotes", { enumerable: true, get: function () { return note_1.GetNotes; } });
 const photos_1 = require("./Get/photos");
 Object.defineProperty(exports, "GetAllPhotos", { enumerable: true, get: function () { return photos_1.GetAllPhotos; } });
+const titleExists_1 = require("./Get/titleExists");
+Object.defineProperty(exports, "CheckProjectTitleExists", { enumerable: true, get: function () { return titleExists_1.CheckProjectTitleExists; } });

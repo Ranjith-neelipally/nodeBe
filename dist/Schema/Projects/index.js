@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.GetNoteSchema = exports.GetAllPlotsSchema = exports.GetAllProjectsSchema = exports.DeleteNoteSchema = exports.DeletePlotSchema = exports.DeleteProjectSchema = exports.EditNoteSchema = exports.EditPlotSchema = exports.EditProjectSchema = exports.CreateNoteSchema = exports.CreateNoteSchema2 = exports.CreatePlotSchema = exports.CreateProjectSchema = void 0;
+exports.GetNoteSchema = exports.GetAllPlotsSchema = exports.CheckProjectTitleExistsSchema = exports.GetAllProjectsSchema = exports.DeleteNoteSchema = exports.DeletePlotSchema = exports.DeleteProjectSchema = exports.EditNoteSchema = exports.EditPlotSchema = exports.EditProjectSchema = exports.CreateNoteSchema = exports.CreateNoteSchema2 = exports.CreatePlotSchema = exports.CreateProjectSchema = void 0;
 const yup = __importStar(require("yup"));
 const mongoose_1 = require("mongoose");
 exports.CreateProjectSchema = yup.object().shape({
@@ -342,6 +342,13 @@ exports.DeleteNoteSchema = yup.object().shape({
 });
 exports.GetAllProjectsSchema = yup.object().shape({
     userId: yup.string().notRequired(),
+});
+exports.CheckProjectTitleExistsSchema = yup.object().shape({
+    title: yup
+        .string()
+        .trim()
+        .required("Project title is required")
+        .max(100, "Project title is too long"),
 });
 exports.GetAllPlotsSchema = yup.object().shape({
     userId: yup.string().transform(function (value) {
