@@ -27,8 +27,7 @@ void dbConnect().catch((error) => {
   console.error("✗ Initial database connection failed:", error);
 });
 
-// In serverless production, requests can arrive before the initial connection finishes.
-// Await the cached connection promise here so cold starts don't return a false 503.
+
 app.use(async (req, res, next) => {
   try {
     await dbConnect();
@@ -64,11 +63,11 @@ app.use(globalErrorHandler);
 
 setupProcessErrorHandlers();
 
-if (process.env.NODE_ENV !== "production") {
-  app.listen(1430, () => {
-    console.log("listening to port 1430");
-  });
-}
+// if (process.env.NODE_ENV !== "production") {
+//   app.listen(1430, () => {
+//     console.log("listening to port 1430");
+//   });
+// }
 
 export default app;
 
