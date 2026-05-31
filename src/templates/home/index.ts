@@ -69,7 +69,7 @@ export const HomeTemplate = `
         </div>
       </div>
       <div>
-        Launching December 2025 (Yeah, we know... It's been a year in the
+        Launching December 2026 (Yeah, we know... It's been a year in the
         making, but good things take time, right? 😅)
       </div>
     </div>
