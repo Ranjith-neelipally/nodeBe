@@ -18,6 +18,37 @@ import { AppError } from "./utils/AppError";
 import dbConnect from "./db";
 
 const app = express();
+
+const defaultAllowedOrigins = [
+  "https://research-pal.com",
+  "https://www.research-pal.com",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+];
+const allowedOrigins = new Set(
+  (process.env.CORS_ORIGINS?.split(",") || defaultAllowedOrigins)
+    .map((origin) => origin.trim())
+    .filter(Boolean),
+);
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+
+  if (origin && allowedOrigins.has(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+  }
+
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  res.header("Access-Control-Allow-Headers", "Authorization,Content-Type,Accept");
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  return next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(requestContextMiddleware);
@@ -48,12 +79,12 @@ app.get("/", (req, res) => {
   res.send(HomeTemplate);
 });
 
-app.use("/auth", AuthRouter);
-app.use("/projects", verifyLoginToken, ProjectsRouter);
-app.use("/ideas", verifyLoginToken, IdeasRouter);
-app.use("/photos", verifyLoginToken, PhotosRouter);
-app.use("/sync", verifyLoginToken, SyncRouter);
-app.use("/admin", RefreshModalsRouter);
+app.use("/api/auth", AuthRouter);
+app.use("/api/projects", verifyLoginToken, ProjectsRouter);
+app.use("/api/ideas", verifyLoginToken, IdeasRouter);
+app.use("/api/photos", verifyLoginToken, PhotosRouter);
+app.use("/api/sync", verifyLoginToken, SyncRouter);
+app.use("/api/admin", RefreshModalsRouter);
 
 app.use((req, res, next) => {
   next(new AppError("Route not found.", 404, "NOT_FOUND"));
