@@ -75,16 +75,16 @@ app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.use(express.static("src/public"));
 app.use(express.static("src/public/reset-password.html"));
 
-app.get("/api", (req, res) => {
+app.get("/", (req, res) => {
   res.send(HomeTemplate);
 });
 
-app.use("/api/auth", AuthRouter);
-app.use("/api/projects", verifyLoginToken, ProjectsRouter);
-app.use("/api/ideas", verifyLoginToken, IdeasRouter);
-app.use("/api/photos", verifyLoginToken, PhotosRouter);
-app.use("/api/sync", verifyLoginToken, SyncRouter);
-app.use("/api/admin", RefreshModalsRouter);
+app.use("/auth", AuthRouter);
+app.use("/projects", verifyLoginToken, ProjectsRouter);
+app.use("/ideas", verifyLoginToken, IdeasRouter);
+app.use("/photos", verifyLoginToken, PhotosRouter);
+app.use("/sync", verifyLoginToken, SyncRouter);
+app.use("/admin", RefreshModalsRouter);
 
 app.use((req, res, next) => {
   next(new AppError("Route not found.", 404, "NOT_FOUND"));
