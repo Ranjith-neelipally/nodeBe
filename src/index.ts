@@ -75,7 +75,7 @@ app.get("/favicon.ico", (req, res) => res.status(204).end());
 app.use(express.static("src/public"));
 app.use(express.static("src/public/reset-password.html"));
 
-app.get("/", (req, res) => {
+app.get("/api", (req, res) => {
   res.send(HomeTemplate);
 });
 
