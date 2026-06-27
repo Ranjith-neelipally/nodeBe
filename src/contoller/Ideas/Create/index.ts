@@ -12,7 +12,7 @@ export const CreateNewIdea: RequestHandler = async (
     const newNote = await Ideas.create({
       userId,
       idea,
-      date,
+      date: new Date(date).toISOString().split("T")[0],
     });
     return res.status(201).json({ newNote });
   } catch (error) {

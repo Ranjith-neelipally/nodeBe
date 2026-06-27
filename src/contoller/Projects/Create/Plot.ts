@@ -17,17 +17,23 @@ export const CreatePlots: RequestHandler = async (req, res) => {
       return res.status(404).json({ error: "Project not found!" });
     }
 
-    // Fetch all existing plots for this project only
-    const existingPlots = await Plots.find({ projectId });
+    const existingPlots = await Plots.find({ projectId, userId });
     const existingTitles = new Set(existingPlots.map((p: any) => p.title));
     const existingIndexes = new Set(
       existingPlots.map((p: any) => JSON.stringify(p.plotIndex))
     );
     const shouldRollbackProject = existingPlots.length === 0;
 
+    if (shouldRollbackProject && plots.length < 4) {
+      await Projects.deleteOne({ _id: project._id, userId });
+      return res.status(400).json({
+        error: "At least 4 plots (e.g. 2x2 matrix) are required",
+      });
+    }
+
     const rollbackProject = async () => {
       if (!project?._id || !shouldRollbackProject) return;
-      await Projects.deleteOne({ _id: project._id });
+      await Projects.deleteOne({ _id: project._id, userId });
     };
 
     // Check for duplicates in the incoming batch (within the batch only)
@@ -91,13 +97,17 @@ export const CreatePlots: RequestHandler = async (req, res) => {
     }));
 
     const createdPlots = await Plots.insertMany(plotsToInsert);
+    await Projects.findOneAndUpdate(
+      { _id: projectId, userId },
+      { $set: { plotsCount: existingPlots.length + createdPlots.length } },
+    );
     return res.status(201).json({ plots: createdPlots });
   } catch (error) {
     if (project?._id && projectId) {
       try {
-        const existingPlotsCount = await Plots.countDocuments({ projectId });
+        const existingPlotsCount = await Plots.countDocuments({ projectId, userId });
         if (existingPlotsCount === 0) {
-          await Projects.deleteOne({ _id: project._id });
+          await Projects.deleteOne({ _id: project._id, userId });
         }
       } catch {}
     }

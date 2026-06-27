@@ -4,7 +4,7 @@ import { CreateNote } from "./Create/Note";
 import { EditProject } from "./Edit/project";
 import { EditPlot } from "./Edit/Plot";
 import { EditNote } from "./Edit/Note";
-import { DeleteProject, DeleteNote, DeletePlot } from "./Delete/index";
+import { DeleteProject, DeleteNote } from "./Delete/index";
 import { GetAllProjects } from "./Get/projects";
 import { GetAllPlots } from "./Get/Plots";
 import { GetNotes } from "./Get/note";
@@ -19,7 +19,6 @@ export {
   EditPlot,
   EditNote,
   DeleteProject,
-  DeletePlot,
   DeleteNote,
   GetAllProjects,
   CheckProjectTitleExists,

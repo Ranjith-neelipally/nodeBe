@@ -2,6 +2,7 @@ import { RequestHandler } from "express";
 
 import { PlotNotes } from "../../../modals/Projects/Notes";
 import { Plots } from "../../../modals/Projects/Plots";
+import { Projects } from "../../../modals/Projects";
 
 export const CreateNote: RequestHandler = async (req, res) => {
   try {
@@ -32,8 +33,10 @@ export const CreateNote: RequestHandler = async (req, res) => {
       }],
     });
 
-    // Update the plot's notesCount
-    await Plots.findByIdAndUpdate(plotId, { $inc: { notesCount: 1 } });
+    await Promise.all([
+      Plots.findOneAndUpdate({ _id: plotId, projectId, userId }, { $inc: { notesCount: 1 } }),
+      Projects.findOneAndUpdate({ _id: projectId, userId }, { $inc: { notesCount: 1 } }),
+    ]);
 
     return res.json(newNote);
   } catch (err) {

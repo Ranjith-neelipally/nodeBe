@@ -7,7 +7,6 @@ import {
   EditPlot,
   EditProject,
   DeleteProject,
-  DeletePlot,
   DeleteNote,
   GetAllProjects,
   GetAllPlots,
@@ -23,7 +22,6 @@ import {
   EditPlotSchema,
   EditNoteSchema,
   DeleteProjectSchema,
-  DeletePlotSchema,
   DeleteNoteSchema,
   GetAllProjectsSchema,
   CheckProjectTitleExistsSchema,
@@ -43,7 +41,6 @@ projectsRouter.patch("/plot", validate(EditPlotSchema), EditPlot);
 projectsRouter.patch("/note", validate(EditNoteSchema), EditNote);
 
 projectsRouter.delete("", validate(DeleteProjectSchema), DeleteProject);
-projectsRouter.delete("/plot", validate(DeletePlotSchema), DeletePlot);
 projectsRouter.delete("/note", validate(DeleteNoteSchema), DeleteNote);
 
 projectsRouter.get("", validate(GetAllProjectsSchema), GetAllProjects);

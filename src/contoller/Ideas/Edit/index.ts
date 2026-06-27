@@ -16,12 +16,16 @@ export const EditIdea: RequestHandler = async (req: IdeasInterface, res) => {
       return res.status(403).json({ error: "Unauthorized access!" });
     }
 
-    await Ideas.updateOne(
-      { _id: _id },
-      { $set: { idea: newIdea, date: date } }
-    );
+    const update: { idea: string; date?: string } = { idea: newIdea };
+    if (date) {
+      update.date = new Date(date).toISOString().split("T")[0];
+    }
 
-    const updatedIdea = await Ideas.findById(_id);
+    const updatedIdea = await Ideas.findOneAndUpdate(
+      { _id, userId },
+      { $set: update },
+      { new: true },
+    );
     return res.status(200).json({ idea: updatedIdea });
   } catch (error) {
     return res.status(500).json({ error: error });

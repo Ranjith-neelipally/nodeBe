@@ -66,7 +66,7 @@ export const CreatePlotSchema = yup.object().shape({
           .required("plotIndex is required"),
       }),
     )
-    .min(4, "At least 4 plots (e.g. 2x2 matrix) are required")
+    .min(1, "At least one plot is required")
     .required("Plots array is required"),
 });
 
@@ -189,27 +189,9 @@ export const EditPlotSchema = yup.object().shape({
   title: yup
     .string()
     .trim()
-    .notRequired()
+    .required("Plot title is required")
     .typeError("Title must be a string")
     .max(100, "Plot title is too long"),
-  color: yup
-    .string()
-    .trim()
-    .notRequired()
-    .typeError("Color must be a string")
-    .max(50, "Plot color is too long"),
-  notesCount: yup
-    .number()
-    .notRequired()
-    .typeError("Notes count must be a number"),
-  replication: yup
-    .number()
-    .notRequired()
-    .typeError("Replication number must be a number"),
-  treatment: yup
-    .number()
-    .notRequired()
-    .typeError("Treatment number must be a number"),
 });
 
 export const EditNoteSchema = yup
@@ -277,28 +259,6 @@ export const DeleteProjectSchema = yup.object().shape({
     })
     .required("Project id is invalid or missing."),
   userId: yup.string().notRequired(),
-});
-
-export const DeletePlotSchema = yup.object().shape({
-  _id: yup
-    .string()
-    .transform(function (value) {
-      if (this.isType(value) && isValidObjectId(value)) {
-        return value;
-      }
-      return "";
-    })
-    .required("Plot id is invalid or missing."),
-  userId: yup.string().notRequired(),
-  projectId: yup
-    .string()
-    .transform(function (value) {
-      if (this.isType(value) && isValidObjectId(value)) {
-        return value;
-      }
-      return "";
-    })
-    .required("ProjectId is invalid or missing."),
 });
 
 export const DeleteNoteSchema = yup.object().shape({

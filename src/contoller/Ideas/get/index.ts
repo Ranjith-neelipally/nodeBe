@@ -17,7 +17,7 @@ export const GetIdea: RequestHandler = async (req, res) => {
   try {
     let query: any = { userId };
     if (date) {
-      query.date = date;
+      query.date = { $regex: `^${date}` };
     }
     let ideasQuery = Ideas.find(query);
     let lim = ideasQueryLimit;
@@ -29,8 +29,17 @@ export const GetIdea: RequestHandler = async (req, res) => {
       pg = Math.max(1, Number(page));
     }
     ideasQuery = ideasQuery.skip((pg - 1) * lim).limit(lim);
-    const userIdeas = await ideasQuery;
-    return res.status(200).json({ userIdeas, page: pg, limit: lim });
+    const [userIdeas, dates] = await Promise.all([
+      ideasQuery,
+      Ideas.distinct("date", { userId }),
+    ]);
+    return res.status(200).json({
+      userIdeas,
+      dates: [...new Set(dates.filter(Boolean).map((value) => String(value).split("T")[0]))]
+        .sort((a, b) => b.localeCompare(a)),
+      page: pg,
+      limit: lim,
+    });
   } catch (error) {
     return res.status(500).json({ error: error });
   }
