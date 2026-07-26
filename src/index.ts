@@ -24,6 +24,7 @@ const defaultAllowedOrigins = [
   "https://www.research-pal.com",
   "http://localhost:5173",
   "http://127.0.0.1:5173",
+  "http://localhost:5174",
 ];
 const allowedOrigins = new Set(
   (process.env.CORS_ORIGINS?.split(",") || defaultAllowedOrigins)
