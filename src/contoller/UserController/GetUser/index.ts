@@ -17,6 +17,7 @@ export const GetUser = asyncHandler(async (req, res) => {
       projects: user.ProjectIds,
       email: user.email,
       createdAt: user.createdAt || user._id.getTimestamp(),
+      profession: user.profession || "",
     },
   });
 });

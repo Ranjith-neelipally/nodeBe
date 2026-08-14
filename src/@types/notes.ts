@@ -6,5 +6,11 @@ export interface IdeasInterface extends Request {
     idea: string;
     date: string;
     _id?: string;
+    reminderEnabled?: boolean;
+    reminderTime?: string | null;
+    projectId?: string | null;
+    plotId?: string | null;
+    completed?: boolean;
+    notificationIds?: number[];
   };
 }

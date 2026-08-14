@@ -10,6 +10,7 @@ const REFRESH_TOKEN_DAYS = 30;
 
 export interface AuthTokenPayload extends JwtPayload {
   userId: string;
+  sessionId?: string;
   type: "access" | "refresh" | "email-verification" | "password-reset";
   codeHash?: string;
 }
@@ -20,13 +21,13 @@ export const getRefreshTokenExpiry = () => {
   return expiresAt;
 };
 
-export const signAccessToken = (userId: string) =>
-  jwt.sign({ userId, type: "access" }, TOKEN_KEY, {
+export const signAccessToken = (userId: string, sessionId?: string) =>
+  jwt.sign({ userId, sessionId, type: "access" }, TOKEN_KEY, {
     expiresIn: ACCESS_TOKEN_EXPIRES_IN,
   });
 
-export const signRefreshToken = (userId: string) =>
-  jwt.sign({ userId, type: "refresh" }, TOKEN_KEY, {
+export const signRefreshToken = (userId: string, sessionId?: string) =>
+  jwt.sign({ userId, sessionId, type: "refresh" }, TOKEN_KEY, {
     expiresIn: REFRESH_TOKEN_EXPIRES_IN,
   });
 
@@ -45,6 +46,9 @@ export const signPasswordResetToken = (userId: string) =>
 
 export const hashRefreshToken = (token: string) => hash(token, 10);
 
+export const compareRefreshToken = (token: string, tokenHash: string) =>
+  compare(token, tokenHash);
+
 export const hashEmailCode = (code: string) => hash(code, 10);
 
 export const compareEmailCode = (code: string, codeHash: string) =>
@@ -61,22 +65,4 @@ export const verifyAuthToken = (
   }
 
   return payload;
-};
-
-export const findRefreshTokenIndex = async (
-  refreshTokens: { token: string; expiresAt: Date }[],
-  token: string,
-) => {
-  const now = Date.now();
-
-  for (let i = 0; i < refreshTokens.length; i += 1) {
-    const stored = refreshTokens[i];
-    if (new Date(stored.expiresAt).getTime() <= now) continue;
-
-    if (await compare(token, stored.token)) {
-      return i;
-    }
-  }
-
-  return -1;
 };

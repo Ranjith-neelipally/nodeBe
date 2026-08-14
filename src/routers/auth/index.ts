@@ -28,12 +28,20 @@ import {
   SignIn,
   UpdatePassword,
   VerifyEmail,
+  UpdateProfile,
+  ChangePassword,
+  GetSessions,
+  RevokeSession,
 } from "../../contoller/UserController";
 import { sendSuccess } from "../../utils/apiResponse";
 
 const AuthRouter = Router();
 
 AuthRouter.get("/get-user", verifyLoginToken, GetUser);
+AuthRouter.patch("/profile", verifyLoginToken, UpdateProfile);
+AuthRouter.post("/change-password", verifyLoginToken, ChangePassword);
+AuthRouter.get("/sessions", verifyLoginToken, GetSessions);
+AuthRouter.delete("/sessions/:sessionId", verifyLoginToken, RevokeSession);
 
 AuthRouter.post("/signup", validate(CreateUserSchema), CreateNewUser);
 AuthRouter.post("/verify-email", emailAuthRateLimit, validate(ProfileVerificationCodeSchema), VerifyEmail);

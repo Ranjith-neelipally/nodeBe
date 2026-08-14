@@ -16,6 +16,12 @@ const IdeasSchema = new Schema(
       type: String,
       require: true,
     },
+    reminderEnabled: { type: Boolean, default: false },
+    reminderTime: { type: String, default: null },
+    projectId: { type: Schema.Types.ObjectId, ref: "Project", default: null },
+    plotId: { type: Schema.Types.ObjectId, ref: "Plot", default: null },
+    completed: { type: Boolean, default: false },
+    notificationIds: { type: [Number], default: [] },
     isConflict: {
       type: Boolean,
       default: false,

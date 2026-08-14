@@ -1,16 +1,25 @@
 import { hash, compare } from "bcryptjs";
-import { Model, ObjectId, Schema, model } from "mongoose";
+import { Model, Schema, model, Types } from "mongoose";
 
 interface UserDocument {
   userName: string;
   email: string;
   password: string;
   avatar?: { url: string };
-  ProjectIds: ObjectId[];
+  profession?: string;
+  ProjectIds: Types.ObjectId[];
   verified?: boolean;
   refreshTokens: {
+    _id: Types.ObjectId;
     token: string;
     device?: string;
+    deviceId?: string;
+    clientType?: string;
+    platform?: string;
+    model?: string;
+    osVersion?: string;
+    browser?: string;
+    lastActiveAt?: Date;
     createdAt: Date;
     expiresAt: Date;
   }[];
@@ -46,6 +55,7 @@ const userSchema = new Schema<UserDocument, {}, PasswordVerificationMethod>({
     type: Object,
     url: String,
   },
+  profession: { type: String, trim: true, default: "" },
   ProjectIds: [
     {
       type: Schema.Types.ObjectId,
@@ -59,6 +69,13 @@ const userSchema = new Schema<UserDocument, {}, PasswordVerificationMethod>({
         required: true,
       },
       device: String,
+      deviceId: String,
+      clientType: String,
+      platform: String,
+      model: String,
+      osVersion: String,
+      browser: String,
+      lastActiveAt: { type: Date, default: Date.now },
       createdAt: {
         type: Date,
         default: Date.now,

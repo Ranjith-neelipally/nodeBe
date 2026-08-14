@@ -3,6 +3,7 @@ import AuthRouter from "./auth";
 import IdeasRouter from "./Ideas";
 import PhotosRouter from "./Photos";
 import SyncRouter from "./sync";
+import ObservationsRouter from "./Observations";
 
 import RefreshModalsRouter from "../db/refreshDatabase";
 
@@ -12,5 +13,6 @@ export {
   IdeasRouter,
   PhotosRouter,
   SyncRouter,
+  ObservationsRouter,
   RefreshModalsRouter,
 };

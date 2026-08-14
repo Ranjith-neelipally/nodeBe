@@ -1,0 +1,21 @@
+import { Router } from "express";
+import { validate } from "../../MiddleWare/Validator";
+import * as c from "../../contoller/Observations";
+import * as s from "../../Schema/Observations";
+
+const router = Router();
+router.post("/types", validate(s.CreateObservationTypeSchema), c.CreateObservationType);
+router.get("/types", validate(s.ObservationTypeQuerySchema), c.ListObservationTypes);
+router.patch("/types", validate(s.UpdateObservationTypeSchema), c.UpdateObservationType);
+router.delete("/types", validate(s.DeleteObservationTypeSchema), c.DeleteObservationType);
+router.post("/records", validate(s.CreateObservationRecordSchema), c.CreateObservationRecord);
+router.post("/records/bulk", validate(s.BulkObservationRecordsSchema), c.BulkCreateObservationRecords);
+router.get("/records", validate(s.ObservationRecordsQuerySchema), c.ListObservationRecords);
+router.patch("/records", validate(s.UpdateObservationRecordSchema), c.UpdateObservationRecord);
+router.delete("/records", validate(s.DeleteObservationRecordSchema), c.DeleteObservationRecord);
+router.get("/summary", validate(s.ObservationAnalyticsQuerySchema), c.GetObservationSummary);
+router.get("/graphs", validate(s.ObservationAnalyticsQuerySchema), c.GetObservationGraphs);
+router.post("/compare", validate(s.ObservationComparisonSchema), c.CompareObservationData);
+router.get("/export", validate(s.ObservationExportQuerySchema), c.ExportObservations);
+router.post("/export/charts",validate(s.ChartExportSchema),c.ExportCharts);
+export default router;

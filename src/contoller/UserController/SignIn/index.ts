@@ -32,20 +32,41 @@ export const SignIn = asyncHandler(async (req: CreateUser, res) => {
     );
   }
 
-  const accessToken = signAccessToken(user._id.toString());
-  const refreshToken = signRefreshToken(user._id.toString());
   user.refreshTokens = (user.refreshTokens || []).filter(
     (stored) => new Date(stored.expiresAt).getTime() > Date.now(),
   );
+  const deviceId = typeof req.headers["x-device-id"] === "string"
+    ? req.headers["x-device-id"]
+    : undefined;
+  if (deviceId) {
+    // A device owns one renewable session. Re-login replaces its stale record
+    // instead of growing refreshTokens on every app reinstall/login attempt.
+    user.refreshTokens = user.refreshTokens.filter(
+      (stored) => stored.deviceId !== deviceId,
+    );
+  }
+  const userAgent = typeof req.headers["user-agent"] === "string" ? req.headers["user-agent"] : "";
+  const mobileMetadata = req.headers["x-client-type"] === "mobile";
+  const browser = /Edg\//.test(userAgent) ? "Edge" : /Chrome\//.test(userAgent) ? "Chrome" : /Safari\//.test(userAgent) ? "Safari" : /Firefox\//.test(userAgent) ? "Firefox" : "Web browser";
+  const webPlatform = /Windows/.test(userAgent) ? "Windows" : /Android/.test(userAgent) ? "Android" : /Mac OS X/.test(userAgent) ? "macOS" : /iPhone|iPad/.test(userAgent) ? "iOS" : /Linux/.test(userAgent) ? "Linux" : "Web";
   user.refreshTokens.push({
-    token: await hashRefreshToken(refreshToken),
-    device:
-      typeof req.headers["user-agent"] === "string"
-        ? req.headers["user-agent"]
-        : undefined,
+    token: "pending",
+    device: mobileMetadata ? undefined : `${browser} · ${webPlatform}`,
+    deviceId,
+    clientType: mobileMetadata ? "mobile" : "web",
+    platform: mobileMetadata && typeof req.headers["x-device-platform"] === "string" ? req.headers["x-device-platform"] : webPlatform,
+    model: mobileMetadata && typeof req.headers["x-device-model"] === "string" ? req.headers["x-device-model"] : undefined,
+    osVersion: mobileMetadata && typeof req.headers["x-device-os-version"] === "string" ? req.headers["x-device-os-version"] : undefined,
+    browser: mobileMetadata ? undefined : browser,
     createdAt: new Date(),
+    lastActiveAt: new Date(),
     expiresAt: getRefreshTokenExpiry(),
-  });
+  } as any);
+  const session = user.refreshTokens[user.refreshTokens.length - 1];
+  const sessionId = session._id.toString();
+  const accessToken = signAccessToken(user._id.toString(), sessionId);
+  const refreshToken = signRefreshToken(user._id.toString(), sessionId);
+  session.token = await hashRefreshToken(refreshToken);
   await user.save();
 
   return sendSuccess(res, {
@@ -56,9 +77,11 @@ export const SignIn = asyncHandler(async (req: CreateUser, res) => {
       projects: user.ProjectIds,
       email: user.email,
       createdAt: user.createdAt || user._id.getTimestamp(),
+      profession: user.profession || "",
     },
     accessToken,
     refreshToken,
+    sessionId,
     token: accessToken,
   });
 });

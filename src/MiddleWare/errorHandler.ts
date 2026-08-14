@@ -54,7 +54,8 @@ const normalizeError = (err: any) => {
 
 export const globalErrorHandler = async (err: Error, req: any, res: Response, next: NextFunction) => {
     const normalizedError = normalizeError(err);
-    const shouldLog = normalizedError.statusCode >= 500 || !normalizedError.isOperational;
+    const databaseUnavailable = normalizedError.code === "DATABASE_UNAVAILABLE";
+    const shouldLog = !databaseUnavailable && (normalizedError.statusCode >= 500 || !normalizedError.isOperational);
 
     try {
         if (shouldLog) {

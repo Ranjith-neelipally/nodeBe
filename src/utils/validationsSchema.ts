@@ -62,6 +62,12 @@ export const CreateIdeaSchema = yup.object().shape({
     .required("Idea content is required")
     .max(1000, "Idea is too long"),
   date: yup.date().required("Date is required"),
+  reminderEnabled: yup.boolean().notRequired(),
+  reminderTime: yup.string().nullable().matches(/^([01]\d|2[0-3]):[0-5]\d$/, { excludeEmptyString: true }).notRequired(),
+  projectId: yup.string().nullable().notRequired(),
+  plotId: yup.string().nullable().notRequired(),
+  completed: yup.boolean().notRequired(),
+  notificationIds: yup.array().of(yup.number().integer()).notRequired(),
 });
 
 export const editIdeaSchema = yup.object().shape({
@@ -81,6 +87,12 @@ export const editIdeaSchema = yup.object().shape({
     .required("Idea content is required")
     .max(1000, "Idea is too long"),
   date: yup.date().notRequired(),
+  reminderEnabled: yup.boolean().notRequired(),
+  reminderTime: yup.string().nullable().matches(/^([01]\d|2[0-3]):[0-5]\d$/, { excludeEmptyString: true }).notRequired(),
+  projectId: yup.string().nullable().notRequired(),
+  plotId: yup.string().nullable().notRequired(),
+  completed: yup.boolean().notRequired(),
+  notificationIds: yup.array().of(yup.number().integer()).notRequired(),
 });
 
 export const GetIdeaSchema = yup.object().shape({

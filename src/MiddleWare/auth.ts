@@ -41,6 +41,25 @@ export const verifyLoginToken: RequestHandler = async (req, res, next) => {
     if (!user) {
       return next(new AppError("Unauthorized request.", 401, "UNAUTHORIZED"));
     }
+    if (!details.sessionId) return next(new AppError("Session refresh required.", 401, "SESSION_REFRESH_REQUIRED"));
+    const sessionIsActive = (user.refreshTokens || []).some(
+      session => session._id.toString() === details.sessionId && new Date(session.expiresAt).getTime() > Date.now(),
+    );
+    if (!sessionIsActive) return next(new AppError("Session has ended.", 401, "SESSION_REVOKED"));
+    const sessionUpdate: Record<string, unknown> = {
+      "refreshTokens.$.lastActiveAt": new Date(),
+    };
+    if (req.headers["x-client-type"] === "mobile") {
+      sessionUpdate["refreshTokens.$.clientType"] = "mobile";
+      if (typeof req.headers["x-device-model"] === "string") sessionUpdate["refreshTokens.$.model"] = req.headers["x-device-model"];
+      if (typeof req.headers["x-device-platform"] === "string") sessionUpdate["refreshTokens.$.platform"] = req.headers["x-device-platform"];
+      if (typeof req.headers["x-device-os-version"] === "string") sessionUpdate["refreshTokens.$.osVersion"] = req.headers["x-device-os-version"];
+      if (typeof req.headers["x-device-id"] === "string") sessionUpdate["refreshTokens.$.deviceId"] = req.headers["x-device-id"];
+    }
+    await User.updateOne(
+      { _id: id, "refreshTokens._id": details.sessionId },
+      { $set: sessionUpdate },
+    );
 
     req.user = {
       id: user._id,

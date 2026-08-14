@@ -8,6 +8,7 @@ import { GenerateResetPasswordLink } from "./ResetPassword";
 import { SignIn } from "./SignIn";
 import {VerifyEmail} from "./VerifyEmail"
 import { Refresh } from "./Refresh";
+import { UpdateProfile, ChangePassword, GetSessions, RevokeSession } from "./Settings";
 
 
 export {
@@ -21,4 +22,8 @@ export {
   VerifyEmail,
   verifyResetPasswordToken,
   UpdatePassword,
+  UpdateProfile,
+  ChangePassword,
+  GetSessions,
+  RevokeSession,
 };

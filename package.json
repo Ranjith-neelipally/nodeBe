@@ -8,7 +8,9 @@
     "build": "rimraf dist && tsc && node -e \"const fs=require('fs'); if(fs.existsSync('public')) fs.cpSync('public', 'dist/public', {recursive: true})\"",
     "ts.check": "tsc --project tsconfig.json",
     "add-build": "git add dist",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate:observations:check": "ts-node src/migrations/embedObservationRecords.ts",
+    "migrate:observations": "ts-node src/migrations/embedObservationRecords.ts --apply"
   },
   "author": "",
   "license": "ISC",
@@ -21,11 +23,15 @@
     "@types/jsonwebtoken": "^9.0.6",
     "bcryptjs": "^2.4.3",
     "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
     "express": "^4.18.2",
     "express-rate-limit": "^7.5.1",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.0.4",
     "nodemailer": "^6.9.13",
+    "pdfkit": "^0.19.1",
+    "sharp": "^0.35.3",
+    "svg-to-pdfkit": "^0.1.8",
     "yup": "^1.4.0"
   },
   "devDependencies": {
@@ -35,6 +41,9 @@
     "@types/mongoose": "^5.11.97",
     "@types/node": "^20.10.7",
     "@types/nodemailer": "^6.4.14",
-    "ts-node-dev": "^2.0.0"
+    "@types/pdfkit": "^0.17.6",
+    "@types/svg-to-pdfkit": "^0.1.4",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.4.5"
   }
 }

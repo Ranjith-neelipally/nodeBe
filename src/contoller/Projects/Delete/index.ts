@@ -8,6 +8,7 @@ import User from "../../../modals/userModal";
 import { SyncChange } from "../../../modals/Sync/SyncChange";
 import { SyncConflict } from "../../../modals/Sync/SyncConflict";
 import { OperationReceipt } from "../../../modals/Sync/OperationReceipt";
+import { ObservationSessions, ObservationTypes } from "../../../modals/Projects/Observations";
 
 export const DeleteProject: RequestHandler = async (
   req,
@@ -44,6 +45,8 @@ export const DeleteProject: RequestHandler = async (
       PlotNotes.deleteMany({ projectId: project._id, userId }),
       Plots.deleteMany({ projectId: project._id, userId }),
       Ideas.deleteMany({ projectId: project._id, userId }),
+      ObservationSessions.deleteMany({ projectId: project._id }),
+      ObservationTypes.deleteMany({ projectId: project._id }),
       Treatments.deleteMany({ projectId: project._id.toString() }),
       SyncChange.deleteMany({ userId, entityId: { $in: relatedEntityIds } }),
       SyncConflict.deleteMany({ userId, entityId: { $in: relatedEntityIds } }),

@@ -7,13 +7,17 @@ import {
   PhotosRouter,
   SyncRouter,
   RefreshModalsRouter,
+  ObservationsRouter,
 } from "./routers";
 import { IgnoreFavIcon } from "./MiddleWare/favicon";
 import { HomeTemplate } from "./templates/home";
 import { verifyLoginToken } from "./MiddleWare/auth";
 import { requestContextMiddleware } from "./MiddleWare/requestContext";
 import { attachSyncContext } from "./MiddleWare/syncContext";
-import { globalErrorHandler, setupProcessErrorHandlers } from "./MiddleWare/errorHandler";
+import {
+  globalErrorHandler,
+  setupProcessErrorHandlers,
+} from "./MiddleWare/errorHandler";
 import { AppError } from "./utils/AppError";
 import dbConnect from "./db";
 
@@ -40,8 +44,14 @@ app.use((req, res, next) => {
   }
 
   res.header("Access-Control-Allow-Credentials", "true");
-  res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-  res.header("Access-Control-Allow-Headers", "Authorization,Content-Type,Accept");
+  res.header(
+    "Access-Control-Allow-Methods",
+    "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+  );
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Authorization,Content-Type,Accept",
+  );
 
   if (req.method === "OPTIONS") {
     return res.sendStatus(204);
@@ -59,13 +69,14 @@ void dbConnect().catch((error) => {
   console.error("✗ Initial database connection failed:", error);
 });
 
-
 app.use(async (req, res, next) => {
   try {
     await dbConnect();
     return next();
   } catch (error) {
-    return next(new AppError("Database not connected.", 503, "DATABASE_UNAVAILABLE"));
+    return next(
+      new AppError("Database not connected.", 503, "DATABASE_UNAVAILABLE"),
+    );
   }
 });
 
@@ -82,6 +93,7 @@ app.get("/", (req, res) => {
 
 app.use("/auth", AuthRouter);
 app.use("/projects", verifyLoginToken, ProjectsRouter);
+app.use("/observations", verifyLoginToken, ObservationsRouter);
 app.use("/ideas", verifyLoginToken, IdeasRouter);
 app.use("/photos", verifyLoginToken, PhotosRouter);
 app.use("/sync", verifyLoginToken, SyncRouter);
@@ -96,10 +108,9 @@ app.use(globalErrorHandler);
 setupProcessErrorHandlers();
 
 // if (process.env.NODE_ENV !== "production") {
-//   app.listen(1430, () => {
-//     console.log("listening to port 1430");
+//   app.listen(3000, () => {
+//     console.log("listening to port 3000");
 //   });
 // }
 
 export default app;
-
