@@ -39,8 +39,13 @@ export const CreateObservationType: RequestHandler = async (req, res) => {
   if (!await projectFor(projectId, userId)) return fail(res, 404, "Project not found");
   if (dataType !== "number" && unit) return fail(res, 422, "Unit is only valid for numeric observations");
   if (await ObservationTypes.findOne({ projectId, name }).collation({locale:"en",strength:2})) return fail(res, 409, "Observation name already exists in this project");
-  const data = await ObservationTypes.create({ projectId, name, dataType, unit: dataType === "number" ? unit || null : null });
-  return res.status(201).json({ data });
+  try {
+    const data = await ObservationTypes.create({ projectId, name, dataType, unit: dataType === "number" ? unit || null : null });
+    return res.status(201).json({ data });
+  } catch (error: any) {
+    if (error?.code === 11000) return fail(res, 409, "Observation name already exists in this project");
+    throw error;
+  }
 };
 export const ListObservationTypes: RequestHandler = async (req, res) => {
   const userId = req.user.id; const { projectId } = req.body;

@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { MONGO_URI } from "../utils/variables";
 import { execFile } from "child_process";
 import { promisify } from "util";
+import { runStartupMigrations } from "./startupMigrations";
 
 const execFileAsync = promisify(execFile);
 let resolvedUri: string | null = null;
@@ -55,7 +56,9 @@ async function dbConnect() {
       socketTimeoutMS: 15000,
     };
 
-    cached.promise = connectionUri().then((uri) => mongoose.connect(uri, opts)).then((mongoose) => {
+    cached.promise = connectionUri().then((uri) => mongoose.connect(uri, opts)).then(async (mongoose) => {
+      if (!mongoose.connection.db) throw new Error("MongoDB connected without an active database");
+      await runStartupMigrations(mongoose.connection.db);
       console.log("Connected to db");
       return mongoose;
     }).catch((err) => {
