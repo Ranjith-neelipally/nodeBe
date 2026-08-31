@@ -23,18 +23,28 @@ import dbConnect from "./db";
 
 const app = express();
 
-const defaultAllowedOrigins = [
-  "https://research-pal.com",
-  "https://www.research-pal.com",
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "http://localhost:5174",
-];
+const productionOrigins = ["https://research-pal.com", "https://www.research-pal.com"];
+const developmentOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174"];
+const defaultAllowedOrigins = process.env.NODE_ENV === "production"
+  ? productionOrigins
+  : [...productionOrigins, ...developmentOrigins];
 const allowedOrigins = new Set(
   (process.env.CORS_ORIGINS?.split(",") || defaultAllowedOrigins)
     .map((origin) => origin.trim())
     .filter(Boolean),
 );
+
+app.disable("x-powered-by");
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "no-referrer");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  next();
+});
 
 app.use((req, res, next) => {
   const origin = req.headers.origin;

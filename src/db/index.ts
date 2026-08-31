@@ -35,7 +35,29 @@ let cached = global.mongoose;
 
 if (!cached) {
   // @ts-ignore
-  cached = global.mongoose = { conn: null, promise: null };
+  cached = global.mongoose = { conn: null, promise: null, listenersRegistered: false };
+}
+
+if (!cached.listenersRegistered) {
+  mongoose.connection.on("connecting", () => console.info("MongoDB connecting"));
+  mongoose.connection.on("connected", () => console.info("MongoDB connected"));
+  mongoose.connection.on("reconnected", () => console.info("MongoDB reconnected"));
+  mongoose.connection.on("disconnected", () => {
+    console.warn("MongoDB disconnected");
+    cached.conn = null;
+    cached.promise = null;
+  });
+  mongoose.connection.on("error", (error) => {
+    console.error(
+      "MongoDB connection error:",
+      error instanceof Error ? error.message : error,
+    );
+    if (mongoose.connection.readyState !== 1) {
+      cached.conn = null;
+      cached.promise = null;
+    }
+  });
+  cached.listenersRegistered = true;
 }
 
 async function dbConnect() {
@@ -43,7 +65,7 @@ async function dbConnect() {
     return cached.conn;
   }
 
-  if (mongoose.connection.readyState === 0) {
+  if (!cached.promise && mongoose.connection.readyState === 0) {
     cached.conn = null;
     cached.promise = null;
   }
@@ -59,7 +81,6 @@ async function dbConnect() {
     cached.promise = connectionUri().then((uri) => mongoose.connect(uri, opts)).then(async (mongoose) => {
       if (!mongoose.connection.db) throw new Error("MongoDB connected without an active database");
       await runStartupMigrations(mongoose.connection.db);
-      console.log("Connected to db");
       return mongoose;
     }).catch((err) => {
       console.log(err, "connection failed");
@@ -76,17 +97,5 @@ async function dbConnect() {
 
   return cached.conn;
 }
-
-mongoose.connection.on("disconnected", () => {
-  cached.conn = null;
-  cached.promise = null;
-});
-
-mongoose.connection.on("error", () => {
-  if (mongoose.connection.readyState !== 1) {
-    cached.conn = null;
-    cached.promise = null;
-  }
-});
 
 export default dbConnect;

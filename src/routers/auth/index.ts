@@ -16,6 +16,7 @@ import {
   loginRateLimit,
   passwordResetRateLimit,
   refreshRateLimit,
+  accountDeletionRateLimit,
 } from "../../MiddleWare/rateLimit";
 
 import {
@@ -32,6 +33,8 @@ import {
   ChangePassword,
   GetSessions,
   RevokeSession,
+  RequestAccountDeletion,
+  ConfirmAccountDeletion,
 } from "../../contoller/UserController";
 import { sendSuccess } from "../../utils/apiResponse";
 
@@ -42,6 +45,8 @@ AuthRouter.patch("/profile", verifyLoginToken, UpdateProfile);
 AuthRouter.post("/change-password", verifyLoginToken, ChangePassword);
 AuthRouter.get("/sessions", verifyLoginToken, GetSessions);
 AuthRouter.delete("/sessions/:sessionId", verifyLoginToken, RevokeSession);
+AuthRouter.post("/account/delete/request", verifyLoginToken, accountDeletionRateLimit, RequestAccountDeletion);
+AuthRouter.post("/account/delete/confirm", verifyLoginToken, accountDeletionRateLimit, ConfirmAccountDeletion);
 
 AuthRouter.post("/signup", validate(CreateUserSchema), CreateNewUser);
 AuthRouter.post("/verify-email", emailAuthRateLimit, validate(ProfileVerificationCodeSchema), VerifyEmail);

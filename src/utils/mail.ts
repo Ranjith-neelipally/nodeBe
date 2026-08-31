@@ -50,14 +50,13 @@ const sendEmailViaGmail = async (mailOptions: {
 }): Promise<void> => {
   try {
     const transporter = createTransporter();
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       ...mailOptions,
       from: getSenderAddress(),
       replyTo: mailOptions.replyTo || mailOptions.from,
     });
-    console.log(`✓ Email sent to ${mailOptions.to}:`, info.response);
   } catch (error) {
-    console.error(`✗ Failed to send email to ${mailOptions.to}:`, error);
+    console.error("Transactional email delivery failed.");
 
     if (error instanceof Error && "code" in error && error.code === "EAUTH") {
       throw new Error(
@@ -113,6 +112,21 @@ export const sendSuccessEmail = async (profile: Profile) => {
       subject: "Success Mail",
       message:
         "Your password has been changed successfully!",
+    }),
+  });
+};
+
+export const sendAccountDeletionCode = async (code: string, profile: Profile) => {
+  await sendEmailViaGmail({
+    to: profile.email,
+    from: VERIFICATIONEMAIL,
+    subject: "Confirm ResearchPal account deletion",
+    html: Email({
+      userName: profile.name,
+      subject: "Confirm ResearchPal account deletion",
+      title: "Confirm account deletion",
+      Otp: `Your verification code is: ${code}`,
+      message: "We received a request to permanently delete your ResearchPal account. This code expires in 10 minutes. If you did not request account deletion, you can ignore this email.",
     }),
   });
 };

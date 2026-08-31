@@ -9,6 +9,7 @@ import { SignIn } from "./SignIn";
 import {VerifyEmail} from "./VerifyEmail"
 import { Refresh } from "./Refresh";
 import { UpdateProfile, ChangePassword, GetSessions, RevokeSession } from "./Settings";
+import { RequestAccountDeletion, ConfirmAccountDeletion } from "./DeleteAccount";
 
 
 export {
@@ -26,4 +27,6 @@ export {
   ChangePassword,
   GetSessions,
   RevokeSession,
+  RequestAccountDeletion,
+  ConfirmAccountDeletion,
 };

@@ -40,3 +40,12 @@ export const passwordResetRateLimit = rateLimit({
   legacyHeaders: false,
   handler: authRateLimitHandler,
 });
+
+export const accountDeletionRateLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: req => req.user?.id?.toString() || req.ip || "anonymous",
+  handler: authRateLimitHandler,
+});
