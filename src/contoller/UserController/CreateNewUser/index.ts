@@ -8,6 +8,7 @@ import {
 } from "../../../utils/authTokens";
 import { asyncHandler } from "../../../utils/asyncHandler";
 import { sendSuccess } from "../../../utils/apiResponse";
+import { AppError } from "../../../utils/AppError";
 
 
 export const CreateNewUser = asyncHandler(async (req: CreateUser, res) => {
@@ -24,11 +25,25 @@ export const CreateNewUser = asyncHandler(async (req: CreateUser, res) => {
     await hashEmailCode(tempToken),
   );
 
-  await sendVerificationMail(tempToken, {
-    email,
-    name: userName,
-    userId: user._id.toString(),
-  });
+  try {
+    await sendVerificationMail(tempToken, {
+      email,
+      name: userName,
+      userId: user._id.toString(),
+    });
+  } catch (error) {
+    await User.findByIdAndDelete(user._id);
+
+    if (error instanceof AppError) {
+      throw error;
+    }
+
+    throw new AppError(
+      "Email delivery is temporarily unavailable.",
+      503,
+      "EMAIL_DELIVERY_UNAVAILABLE",
+    );
+  }
 
   return sendSuccess(res, {
     user_id: user._id,

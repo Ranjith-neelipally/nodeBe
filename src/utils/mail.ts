@@ -1,6 +1,7 @@
 import { Email } from "../mail/WelcomeMail";
 import { GMAIL_USER, GMAIL_PASS, VERIFICATIONEMAIL } from "../utils/variables";
 import nodemailer from "nodemailer";
+import { AppError } from "./AppError";
 
 interface Profile {
   name: string;
@@ -16,7 +17,11 @@ interface resetPassword {
 
 const getSenderAddress = () => {
   if (!GMAIL_USER) {
-    throw new Error("Missing GMAIL_USER environment variable for email transport.");
+    throw new AppError(
+      "Email delivery is not configured.",
+      503,
+      "EMAIL_DELIVERY_UNAVAILABLE",
+    );
   }
 
   return VERIFICATIONEMAIL && VERIFICATIONEMAIL.toLowerCase() === GMAIL_USER.toLowerCase()
@@ -26,7 +31,11 @@ const getSenderAddress = () => {
 
 const createTransporter = () => {
   if (!GMAIL_USER || !GMAIL_PASS) {
-    throw new Error("Missing GMAIL_USER or GMAIL_PASS environment variables for Gmail authentication.");
+    throw new AppError(
+      "Email delivery is not configured.",
+      503,
+      "EMAIL_DELIVERY_UNAVAILABLE",
+    );
   }
 
   // Gmail app passwords are shown with spaces for readability.
@@ -59,7 +68,10 @@ const sendEmailViaGmail = async (mailOptions: {
     console.error("Transactional email delivery failed.");
 
     if (error instanceof Error && "code" in error && error.code === "EAUTH") {
-      throw new Error(
+      throw new AppError(
+        "Email delivery is temporarily unavailable.",
+        503,
+        "EMAIL_DELIVERY_UNAVAILABLE",
         "Gmail authentication failed. Verify that GMAIL_USER matches the Google account that generated the App Password, 2-Step Verification is enabled on that account, and GMAIL_PASS is the 16-character App Password."
       );
     }
