@@ -68,12 +68,12 @@ Required variables:
 
 - `MONGO_URI`
 - `TOKEN_KEY`
-- `GMAIL_USER`
-- `GMAIL_PASS`
+- `BREVO_API_KEY`
+- `MAIL_FROM_EMAIL` (use `no-reply@research-pal.com`)
+- `MAIL_FROM_NAME` (use `ResearchPal`)
 
 Optional variables:
 
-- `ADMIN_MAIL`
 - `PASSWORD_RESET_LINK`
 
 ## Development
