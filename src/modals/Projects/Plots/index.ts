@@ -40,6 +40,18 @@ export const PlotSchema = new Schema(
       type: [Number],
       required: true,
     },
+    replicationName: {
+      type: String,
+      trim: true,
+      default: undefined,
+      maxlength: 100,
+    },
+    treatmentName: {
+      type: String,
+      trim: true,
+      default: undefined,
+      maxlength: 100,
+    },
     notesCount: {
       type: Number,
       default: 0,

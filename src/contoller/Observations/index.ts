@@ -11,11 +11,13 @@ import { cleanupExportTempAfterResponse } from "../../utils/exportTempCleanup";
 
 const projectFor = (projectId: string, userId: string) => Projects.findOne({ _id: projectId, userId });
 const fail = (res: any, status: number, error: string) => res.status(status).json({ error });
+const requestData = (req: any) => Object.keys(req.body || {}).length ? req.body : req.query;
 const serializeRecord = (session: any, record: any, plot?: any, type?: any) => ({
   _id: `${session._id}:${record.plotId}`, projectId: session.projectId, plotId: record.plotId, observationTypeId: session.observationTypeId,
   value: record.value, note: record.note, capturedAt: session.capturedAt, createdAt: session.createdAt, updatedAt: session.updatedAt,
   measurementSessionId: session._id.toString(), sessionSequence: session.sequence,
   plotName: plot?.title, treatment: plot?.treatment, replication: plot?.replication,
+  treatmentName: plot?.treatmentName, replicationName: plot?.replicationName,
   treatmentId: plot?.treatment != null ? String(plot.treatment) : undefined,
   replicationId: plot?.replication != null ? String(plot.replication) : undefined,
   observationName: type?.name, unit: type?.unit, dataType: type?.dataType,
@@ -48,7 +50,7 @@ export const CreateObservationType: RequestHandler = async (req, res) => {
   }
 };
 export const ListObservationTypes: RequestHandler = async (req, res) => {
-  const userId = req.user.id; const { projectId } = req.body;
+  const userId = req.user.id; const { projectId } = requestData(req);
   if (!await projectFor(projectId, userId)) return fail(res, 404, "Project not found");
   const data = await ObservationTypes.find({ projectId }).sort({ updatedAt: -1 });
   return res.json({ data });
@@ -88,7 +90,7 @@ export const BulkCreateObservationRecords: RequestHandler = async (req, res) => 
   return res.status(201).json({ data });
 };
 export const ListObservationRecords: RequestHandler = async (req, res) => {
-  const userId = req.user.id; const { projectId, observationTypeId, plotId } = req.body;
+  const userId = req.user.id; const { projectId, observationTypeId, plotId } = requestData(req);
   if (!await projectFor(projectId, userId)) return fail(res, 404, "Project not found");
   if (observationTypeId && !await projectType(projectId, observationTypeId)) return fail(res, 404, "Observation type not found");
   const query: any = { projectId }; if (observationTypeId) query.observationTypeId = observationTypeId; if (plotId) query["records.plotId"] = plotId;
@@ -113,17 +115,17 @@ export const DeleteObservationRecord: RequestHandler = async (req, res) => {
 };
 
 export const GetObservationSummary: RequestHandler = async (req, res) => {
-  const { projectId, observationTypeId } = req.body; const snapshot = await buildProjectObservationSnapshot(projectId, req.user.id, observationTypeId); const analysis=snapshot?.analyses[0]; if (!analysis) return fail(res, 422, "Numeric observation type not found");
+  const { projectId, observationTypeId } = requestData(req); const snapshot = await buildProjectObservationSnapshot(projectId, req.user.id, observationTypeId); const analysis=snapshot?.analyses[0]; if (!analysis) return fail(res, 422, "Numeric observation type not found");
   return res.json({ data: analysis.summary });
 };
 export const GetObservationGraphs: RequestHandler = async (req, res) => {
-  const { projectId, observationTypeId } = req.body; const snapshot = await buildProjectObservationSnapshot(projectId, req.user.id, observationTypeId); const analysis=snapshot?.analyses[0]; if (!analysis) return fail(res, 422, "Numeric observation type not found");
+  const { projectId, observationTypeId } = requestData(req); const snapshot = await buildProjectObservationSnapshot(projectId, req.user.id, observationTypeId); const analysis=snapshot?.analyses[0]; if (!analysis) return fail(res, 422, "Numeric observation type not found");
   return res.json({ data: { sessions:analysis.sessions, treatmentSeries:analysis.treatmentSeries, timeSeries:analysis.timeSeries } });
 };
 export const CompareObservationData:RequestHandler=async(req,res)=>{const{projectId,observationTypeId,...request}=req.body;const snapshot=await buildProjectObservationSnapshot(projectId,req.user.id,observationTypeId);if(!snapshot)return fail(res,404,"Project or observation type not found");const data=buildObservationComparison(snapshot,observationTypeId,request);if(!data)return fail(res,422,"Numeric observation type required");return res.json({data})};
 const csvCell = (v: unknown) => `"${String(v ?? "").replace(/"/g, '""')}"`;
 export const ExportObservations: RequestHandler = async (req, res) => {
-  const { projectId, observationTypeId, format="csv", comparison:comparisonJson } = req.body; const snapshot=await buildProjectObservationSnapshot(projectId,req.user.id,observationTypeId);if(!snapshot)return fail(res,404,"Project or observation type not found");const name=safeFilename(String(snapshot.project.title));let comparison:any=null;if(comparisonJson&&observationTypeId){try{comparison=buildObservationComparison(snapshot,observationTypeId,JSON.parse(comparisonJson) as ComparisonRequest)}catch{return fail(res,422,"Invalid comparison export configuration")}}
+  const { projectId, observationTypeId, format="csv", comparison:comparisonJson } = requestData(req); const snapshot=await buildProjectObservationSnapshot(projectId,req.user.id,observationTypeId);if(!snapshot)return fail(res,404,"Project or observation type not found");const name=safeFilename(String(snapshot.project.title));let comparison:any=null;if(comparisonJson&&observationTypeId){try{comparison=buildObservationComparison(snapshot,observationTypeId,JSON.parse(comparisonJson) as ComparisonRequest)}catch{return fail(res,422,"Invalid comparison export configuration")}}
   cleanupExportTempAfterResponse(res);
   if(format==="xlsx"){const file=await createObservationWorkbook(snapshot,comparison);res.setHeader("Content-Type","application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");res.setHeader("Content-Disposition",`attachment; filename="${name}-observations.xlsx"`);return res.send(file)}
   if(format==="pdf"){const file=await createObservationPdf(snapshot,comparison);res.setHeader("Content-Type","application/pdf");res.setHeader("Content-Disposition",`attachment; filename="${name}-observation-report.pdf"`);return res.send(file)}

@@ -23,6 +23,8 @@ export interface Plot extends Request {
     userId: string;
     replication: number;
     treatment: number;
+    replicationName?: string;
+    treatmentName?: string;
     plotIndex: number[];
   };
 }

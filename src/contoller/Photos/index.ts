@@ -27,6 +27,8 @@ export const GetPhotoDetails: RequestHandler = async (req, res) => {
       title: plot?.title,
       replication: plot?.replication,
       treatment: plot?.treatment,
+      replicationName: plot?.replicationName,
+      treatmentName: plot?.treatmentName,
       __v: Note.__v,
       ProjectTitle: project?.title,
     };

@@ -64,6 +64,8 @@ export const CreatePlotSchema = yup.object().shape({
           .array()
           .of(yup.number().required())
           .required("plotIndex is required"),
+        replicationName: yup.string().trim().notRequired().max(100, "Replication name is too long"),
+        treatmentName: yup.string().trim().notRequired().max(100, "Treatment name is too long"),
       }),
     )
     .min(1, "At least one plot is required")
@@ -189,9 +191,11 @@ export const EditPlotSchema = yup.object().shape({
   title: yup
     .string()
     .trim()
-    .required("Plot title is required")
+    .notRequired()
     .typeError("Title must be a string")
     .max(100, "Plot title is too long"),
+  replicationName: yup.string().trim().notRequired().max(100, "Replication name is too long"),
+  treatmentName: yup.string().trim().notRequired().max(100, "Treatment name is too long"),
 });
 
 export const EditNoteSchema = yup
@@ -338,12 +342,14 @@ export const GetNoteSchema = yup.object().shape({
       return "";
     })
     .required("ProjectId is invalid or missing."),
-  plotId: yup.string().transform(function (value) {
-    if (this.isType(value) && isValidObjectId(value)) {
-      return value;
-    }
-    return "";
-  }),
+  plotId: yup
+    .string()
+    .trim()
+    .notRequired()
+    .test("plotId", "PlotId is invalid.", (value) => {
+      if (!value) return true;
+      return isValidObjectId(value);
+    }),
   date: yup
     .string()
     .matches(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")

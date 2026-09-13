@@ -10,16 +10,31 @@ export const validate = (schema: any): RequestHandler => {
         : Object.keys(req.query || {}).length > 0
         ? req.query
         : req.params;
+    const source =
+      Object.keys(req.body || {}).length > 0
+        ? "body"
+        : Object.keys(req.query || {}).length > 0
+        ? "query"
+        : "params";
 
     const schemaToValidate = yup.object({
       data: schema,
     });
 
     try {
-      await schemaToValidate.validate({ data }, { abortEarly: false });
+      const validated = await schemaToValidate.validate(
+        { data },
+        { abortEarly: false },
+      );
 
       // normalize for downstream middlewares/controllers
-      req.body = data;
+      if (source === "query") {
+        req.query = validated.data;
+      } else if (source === "params") {
+        req.params = validated.data;
+      } else {
+        req.body = validated.data;
+      }
 
       return next();
     } catch (error) {
