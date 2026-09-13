@@ -26,13 +26,13 @@ app.set("trust proxy", 1);
 
 const productionOrigins = ["https://research-pal.com", "https://www.research-pal.com"];
 const developmentOrigins = ["http://localhost:5173", "http://127.0.0.1:5173", "http://localhost:5174"];
-const defaultAllowedOrigins = process.env.NODE_ENV === "production"
-  ? productionOrigins
-  : [...productionOrigins, ...developmentOrigins];
+const defaultAllowedOrigins = [...productionOrigins, ...developmentOrigins];
+const configuredOrigins = process.env.CORS_ORIGINS
+  ?.split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 const allowedOrigins = new Set(
-  (process.env.CORS_ORIGINS?.split(",") || defaultAllowedOrigins)
-    .map((origin) => origin.trim())
-    .filter(Boolean),
+  configuredOrigins?.length ? configuredOrigins : defaultAllowedOrigins,
 );
 
 app.disable("x-powered-by");
@@ -96,7 +96,6 @@ app.use(IgnoreFavIcon);
 app.get("/favicon.ico", (req, res) => res.status(204).end());
 
 app.use(express.static("src/public"));
-app.use(express.static("src/public/reset-password.html"));
 
 app.get("/", (req, res) => {
   res.send(HomeTemplate);
@@ -118,10 +117,10 @@ app.use(globalErrorHandler);
 
 setupProcessErrorHandlers();
 
-// if (process.env.NODE_ENV !== "production") {
-//   app.listen(3000, () => {
-//     console.log("listening to port 3000");
-//   });
-// }
+if (process.env.NODE_ENV !== "production") {
+  app.listen(3000, () => {
+    console.log("listening to port 3000");
+  });
+}
 
 export default app;

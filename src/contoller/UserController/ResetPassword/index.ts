@@ -1,5 +1,5 @@
 import User from "../../../modals/userModal";
-import { PASSWORD_RESET_LINK } from "../../../utils/variables";
+import { FRONTEND_URL } from "../../../utils/variables";
 import { sendPasswordResetMail } from "../../../utils/mail";
 import { signPasswordResetToken } from "../../../utils/authTokens";
 import { asyncHandler } from "../../../utils/asyncHandler";
@@ -15,7 +15,9 @@ export const GenerateResetPasswordLink = asyncHandler(async (req, res) => {
   }
 
   const resetToken = signPasswordResetToken(user._id.toString());
-  const resetLink = `${PASSWORD_RESET_LINK}?token=${resetToken}&userId=${user._id}`;
+  const resetUrl = new URL("/reset-password", FRONTEND_URL);
+  resetUrl.searchParams.set("token", resetToken);
+  const resetLink = resetUrl.toString();
 
   await sendPasswordResetMail({
     name: user.userName,
