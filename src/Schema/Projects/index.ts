@@ -119,6 +119,10 @@ export const CreateNoteSchema = yup.object().shape({
     .required("PlotId is invalid or missing."),
 
   title: yup.string().optional(),
+  date: yup
+    .string()
+    .matches(/^\d{4}-\d{2}-\d{2}$/, "Date must be in YYYY-MM-DD format")
+    .optional(),
   ProjectTitle: yup.string().optional(),
   replication: yup.number().optional(),
   treatment: yup.number().optional(),

@@ -5,6 +5,9 @@ const defaultQueryLimit = 15;
 const toDateString = (value: Date | string) =>
   new Date(value).toISOString().split("T")[0];
 
+const noteDate = (note: { date?: string | null; createdAt: Date; createdOfflineAt?: Date | null }) =>
+  note.date || toDateString(note.createdOfflineAt || note.createdAt);
+
 export const GetNotes: RequestHandler = async (req, res) => {
   const userId = req.user.id;
   const { projectId, plotId, date, limit, page, skip } = req.query as {
@@ -34,16 +37,20 @@ export const GetNotes: RequestHandler = async (req, res) => {
       projectId,
     };
 
+    if (plotId) {
+      query.plotId = plotId;
+    }
+
     if (date) {
       const startDate = new Date(`${date}T00:00:00.000Z`);
       const endDate = new Date(`${date}T23:59:59.999Z`);
 
-      query.createdAt = {
-        $gte: startDate,
-        $lte: endDate,
-      };
-    } else if (plotId) {
-      query.plotId = plotId;
+      query.$or = [
+        { date },
+        { date: { $exists: false }, createdOfflineAt: { $gte: startDate, $lte: endDate } },
+        { date: { $exists: false }, createdOfflineAt: null, createdAt: { $gte: startDate, $lte: endDate } },
+        { date: { $exists: false }, createdOfflineAt: { $exists: false }, createdAt: { $gte: startDate, $lte: endDate } },
+      ];
     }
 
     const [notes, total] = await Promise.all([
@@ -55,7 +62,7 @@ export const GetNotes: RequestHandler = async (req, res) => {
 
     const formattedNotes = notes.map((note) => ({
       ...note.toObject(),
-      date: toDateString(note.createdAt),
+      date: noteDate(note),
     }));
 
     return res.status(200).json({

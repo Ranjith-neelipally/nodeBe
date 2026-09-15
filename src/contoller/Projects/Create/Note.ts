@@ -4,10 +4,13 @@ import { PlotNotes } from "../../../modals/Projects/Notes";
 import { Plots } from "../../../modals/Projects/Plots";
 import { Projects } from "../../../modals/Projects";
 
+const toDateString = (value: Date | string) =>
+  new Date(value).toISOString().split("T")[0];
+
 export const CreateNote: RequestHandler = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { projectId, plotId, content, photoIds, title } = req.body;
+    const { projectId, plotId, content, photoIds, title, date } = req.body;
 
     const validPlot = await Plots.findOne({
       _id: plotId,
@@ -26,6 +29,7 @@ export const CreateNote: RequestHandler = async (req, res) => {
       projectId,
       plotId,
       userId,
+      date: date || toDateString(new Date()),
       title: title || "",
       content: [{
         note: Array.isArray(content) ? content : [content],
