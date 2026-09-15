@@ -117,10 +117,10 @@ app.use(globalErrorHandler);
 
 setupProcessErrorHandlers();
 
-if (process.env.NODE_ENV !== "production") {
-  app.listen(3000, () => {
-    console.log("listening to port 3000");
-  });
-}
+// if (process.env.NODE_ENV !== "production") {
+//   app.listen(3000, () => {
+//     console.log("listening to port 3000");
+//   });
+// }
 
 export default app;
