@@ -11,13 +11,13 @@ import {
   verifyLoginToken,
   verifyResetPasswordToken,
 } from "../../MiddleWare/auth";
-import {
-  emailAuthRateLimit,
-  loginRateLimit,
-  passwordResetRateLimit,
-  refreshRateLimit,
-  accountDeletionRateLimit,
-} from "../../MiddleWare/rateLimit";
+// import {
+//   emailAuthRateLimit,
+//   loginRateLimit,
+//   passwordResetRateLimit,
+//   refreshRateLimit,
+//   accountDeletionRateLimit,
+// } from "../../MiddleWare/rateLimit";
 
 import {
   CreateNewUser,
@@ -45,17 +45,16 @@ AuthRouter.patch("/profile", verifyLoginToken, UpdateProfile);
 AuthRouter.post("/change-password", verifyLoginToken, ChangePassword);
 AuthRouter.get("/sessions", verifyLoginToken, GetSessions);
 AuthRouter.delete("/sessions/:sessionId", verifyLoginToken, RevokeSession);
-AuthRouter.post("/account/delete/request", verifyLoginToken, accountDeletionRateLimit, RequestAccountDeletion);
-AuthRouter.post("/account/delete/confirm", verifyLoginToken, accountDeletionRateLimit, ConfirmAccountDeletion);
+AuthRouter.post("/account/delete/request", verifyLoginToken, RequestAccountDeletion);
+AuthRouter.post("/account/delete/confirm", verifyLoginToken, ConfirmAccountDeletion);
 
 AuthRouter.post("/signup", validate(CreateUserSchema), CreateNewUser);
-AuthRouter.post("/verify-email", emailAuthRateLimit, validate(ProfileVerificationCodeSchema), VerifyEmail);
-AuthRouter.post("/resend-verification-email", emailAuthRateLimit, ResendVerificationEmail);
-AuthRouter.post("/forgot-password", passwordResetRateLimit, GenerateResetPasswordLink);
+AuthRouter.post("/verify-email", validate(ProfileVerificationCodeSchema), VerifyEmail);
+AuthRouter.post("/resend-verification-email", ResendVerificationEmail);
+AuthRouter.post("/forgot-password", GenerateResetPasswordLink);
 
 AuthRouter.post(
   "/verify-reset-password",
-  passwordResetRateLimit,
   validate(TokenAndIdValidation),
   verifyResetPasswordToken,
   (req, res) => sendSuccess(res, null, 200, "Token is valid"),
@@ -63,15 +62,14 @@ AuthRouter.post(
 
 AuthRouter.post(
   "/update-password",
-  passwordResetRateLimit,
   validate(PasswordCheckSchema),
   verifyResetPasswordToken,
   UpdatePassword
 );
 
-AuthRouter.post("/login", loginRateLimit, validate(LoginValidationSchema), SignIn);
-AuthRouter.post("/sign-in", loginRateLimit, validate(LoginValidationSchema), SignIn);
-AuthRouter.post("/refresh", refreshRateLimit, Refresh);
+AuthRouter.post("/login", validate(LoginValidationSchema), SignIn);
+AuthRouter.post("/sign-in", validate(LoginValidationSchema), SignIn);
+AuthRouter.post("/refresh", Refresh);
 
 AuthRouter.post("/logout", verifyLoginToken, Logout);
 AuthRouter.post("/log-out", verifyLoginToken, Logout);

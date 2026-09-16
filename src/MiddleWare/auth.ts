@@ -2,7 +2,6 @@ import { RequestHandler } from "express";
 import User from "../modals/userModal";
 import { verifyAuthToken } from "../utils/authTokens";
 import { AppError } from "../utils/AppError";
-import { touchPhotoDevicePresence } from "../services/photoPresence";
 
 export const verifyResetPasswordToken: RequestHandler = async (
   req,
@@ -69,18 +68,6 @@ export const verifyLoginToken: RequestHandler = async (req, res, next) => {
       projects: user.ProjectIds.map((id) => id.toString()),
     };
     req.token = splitToken
-    const deviceId = typeof req.headers["x-device-id"] === "string" ? req.headers["x-device-id"] : "";
-    const clientType = req.headers["x-client-type"] === "mobile" ? "mobile" : "web";
-    if (deviceId) {
-      touchPhotoDevicePresence({
-        userId: user._id.toString(),
-        deviceId,
-        clientType,
-        model: typeof req.headers["x-device-model"] === "string" ? req.headers["x-device-model"] : undefined,
-        platform: typeof req.headers["x-device-platform"] === "string" ? req.headers["x-device-platform"] : undefined,
-        osVersion: typeof req.headers["x-device-os-version"] === "string" ? req.headers["x-device-os-version"] : undefined,
-      });
-    }
     return next();
   } catch (error) {
     return next(error);

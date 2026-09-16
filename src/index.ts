@@ -61,7 +61,7 @@ app.use((req, res, next) => {
   );
   res.header(
     "Access-Control-Allow-Headers",
-    "Authorization,Content-Type,Accept",
+    "Authorization,Content-Type,Accept,Cache-Control,X-Client-Type,X-Device-Id,X-Device-Model,X-Device-Platform,X-Device-Os-Version",
   );
 
   if (req.method === "OPTIONS") {
@@ -71,8 +71,8 @@ app.use((req, res, next) => {
   return next();
 });
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: false, limit: "2mb" }));
 app.use(requestContextMiddleware);
 app.use(attachSyncContext);
 
@@ -117,10 +117,12 @@ app.use(globalErrorHandler);
 
 setupProcessErrorHandlers();
 
-// if (process.env.NODE_ENV !== "production") {
-//   app.listen(3000, () => {
-//     console.log("listening to port 3000");
-//   });
-// }
+if (process.env.NODE_ENV !== "production") {
+  const host = process.env.HOST || "127.0.0.1";
+  const port = Number(process.env.PORT || 3000);
+  app.listen(port, host, () => {
+    console.log(`listening on ${host}:${port}`);
+  });
+}
 
 export default app;
