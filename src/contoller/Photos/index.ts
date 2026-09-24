@@ -1,5 +1,6 @@
 import { del, get, put } from "@vercel/blob";
 import { RequestHandler } from "express";
+import { Types } from "mongoose";
 import { createCipheriv, createDecipheriv, randomBytes, randomUUID } from "node:crypto";
 import { Photos } from "../../modals/Photos";
 import { PlotNotes } from "../../modals/Projects/Notes";
@@ -12,12 +13,43 @@ const ENCRYPTED_PHOTO_TYPE = "application/octet-stream";
 const PHOTO_VARIANTS = ["original", "standard", "thumbnail"] as const;
 type PhotoVariant = typeof PHOTO_VARIANTS[number];
 type UploadedPart = { name: string; filename?: string; contentType?: string; data: Buffer };
+type UploadLogContext = {
+  stage?: string;
+  userId?: string;
+  projectId?: string | null;
+  plotId?: string | null;
+  noteId?: string | null;
+  photoId?: string | null;
+  mimeType?: string | null;
+  fileSize?: number | null;
+  contentType?: string | string[] | null;
+  contentLength?: string | string[] | null;
+  bodyBytes?: number;
+  files?: Record<string, { size: number; mimeType: string | null; filename: string | null } | null>;
+};
 const firstString = (value: unknown) => typeof value === "string" && value.trim() ? value.trim() : null;
 const createStorageId = () => randomBytes(32).toString("base64url");
 const storagePath = (storageId: string) => `research-pal/${storageId}.bin`;
 const isPhotoVariant = (value: string): value is PhotoVariant => PHOTO_VARIANTS.includes(value as PhotoVariant);
 const bytesToBase64Url = (bytes: Buffer) => bytes.toString("base64url");
 const base64UrlToBytes = (value: string) => Buffer.from(value, "base64url");
+const isObjectId = (value: string | null | undefined) => Boolean(value && Types.ObjectId.isValid(value));
+const isLikelyFilePart = (part: UploadedPart, name: string) => (
+  part.name === name &&
+  part.data.length > 0 &&
+  (typeof part.filename !== "undefined" || Boolean(part.contentType))
+);
+
+function logUpload(message: string, context: UploadLogContext = {}) {
+  console.log(`[photos/upload] ${message}`, context);
+}
+
+function logUploadError(message: string, error: unknown, context: UploadLogContext = {}) {
+  const details = error instanceof Error
+    ? { message: error.message, stack: error.stack }
+    : { message: String(error) };
+  console.error(`[photos/upload] ${message}`, { ...context, error: details });
+}
 
 async function authorizeRelationship(userId: string, projectId: string, plotId: string, noteId?: string | null) {
   const [project, plot] = await Promise.all([
@@ -49,7 +81,7 @@ function readMultipartBody(req: Parameters<RequestHandler>[0]) {
 
 function parseMultipart(buffer: Buffer, contentType = "") {
   const boundary = /boundary=([^;]+)/i.exec(contentType)?.[1]?.replace(/^"|"$/g, "");
-  if (!boundary) throw new Error("INVALID_MULTIPART");
+  if (!boundary) throw new Error("INVALID_MULTIPART_BOUNDARY");
   const marker = Buffer.from(`--${boundary}`);
   const parts: UploadedPart[] = [];
   let offset = 0;
@@ -82,7 +114,7 @@ function field(parts: UploadedPart[], name: string) {
 }
 
 function filePart(parts: UploadedPart[], variant: PhotoVariant) {
-  return parts.find(part => part.name === variant && part.filename);
+  return parts.find(part => isLikelyFilePart(part, variant));
 }
 
 function encryptPhotoBytes(plain: Buffer, mimeType: string) {
@@ -116,15 +148,34 @@ function decryptPhotoBytes(encrypted: Buffer, encryption: any) {
   return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
 }
 
-async function uploadEncryptedVariant(part: UploadedPart) {
-  if (!part.data.length || part.data.length > MAX_PHOTO_BYTES) throw new Error("INVALID_PHOTO_SIZE");
+async function uploadEncryptedVariant(part: UploadedPart, variant: PhotoVariant, context: UploadLogContext) {
+  const plain = Buffer.isBuffer(part.data) ? part.data : Buffer.from(part.data);
+  if (!plain.length || plain.length > MAX_PHOTO_BYTES) throw new Error("INVALID_PHOTO_SIZE");
   const storageId = createStorageId();
-  const { encrypted, metadata } = encryptPhotoBytes(part.data, part.contentType || "image/jpeg");
+  const { encrypted, metadata } = encryptPhotoBytes(plain, part.contentType || "image/jpeg");
+  logUpload("encryption complete", {
+    ...context,
+    stage: `encrypt ${variant}`,
+    mimeType: metadata.mimeType,
+    fileSize: plain.length,
+  });
+  logUpload("blob upload started", {
+    ...context,
+    stage: `blob upload ${variant}`,
+    mimeType: ENCRYPTED_PHOTO_TYPE,
+    fileSize: encrypted.length,
+  });
   await put(storagePath(storageId), encrypted, {
     access: "private",
     addRandomSuffix: false,
     allowOverwrite: false,
     contentType: ENCRYPTED_PHOTO_TYPE,
+  });
+  logUpload("blob upload complete", {
+    ...context,
+    stage: `blob upload ${variant}`,
+    mimeType: ENCRYPTED_PHOTO_TYPE,
+    fileSize: encrypted.length,
   });
   return { storageId, encryption: metadata };
 }
@@ -143,39 +194,85 @@ function publicVariantMetadata(photoId: string, variants: Record<PhotoVariant, a
 
 export const UploadPhoto: RequestHandler = async (req, res) => {
   const uploadedStorageIds: string[] = [];
+  let stage = "request received";
+  let logContext: UploadLogContext = {
+    stage,
+    contentType: req.headers["content-type"] || null,
+    contentLength: req.headers["content-length"] || null,
+  };
   try {
+    logUpload("request received", logContext);
     if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      console.error("BLOB_READ_WRITE_TOKEN is not configured");
+      stage = "storage configuration";
+      logUploadError("storage is not configured", new Error("BLOB_READ_WRITE_TOKEN is not configured"), { ...logContext, stage });
       return res.status(503).json({ error: "Photo storage is not configured." });
     }
-    const parts = parseMultipart(await readMultipartBody(req), req.headers["content-type"]);
+    stage = "receive";
+    const body = await readMultipartBody(req);
+    logContext = { ...logContext, stage, bodyBytes: body.length };
+    logUpload("request body received", logContext);
+    stage = "parse multipart";
+    const parts = parseMultipart(body, req.headers["content-type"]);
     const userId = req.user.id.toString();
     const projectId = field(parts, "projectId");
     const plotId = field(parts, "plotId");
     const noteId = field(parts, "noteId");
     const capturedAt = field(parts, "capturedAt");
     const requestedPhotoId = firstString(field(parts, "photoId")) || firstString(field(parts, "idempotencyKey"));
-    const original = filePart(parts, "original");
+    const original = filePart(parts, "original") || parts.find(part => isLikelyFilePart(part, "photo") || isLikelyFilePart(part, "file"));
     const standard = filePart(parts, "standard") || original;
     const thumbnail = filePart(parts, "thumbnail");
+    logContext = {
+      ...logContext,
+      stage,
+      userId,
+      projectId,
+      plotId,
+      noteId,
+      photoId: requestedPhotoId,
+      files: {
+        original: original ? { size: original.data.length, mimeType: original.contentType || null, filename: original.filename || null } : null,
+        standard: standard ? { size: standard.data.length, mimeType: standard.contentType || null, filename: standard.filename || null } : null,
+        thumbnail: thumbnail ? { size: thumbnail.data.length, mimeType: thumbnail.contentType || null, filename: thumbnail.filename || null } : null,
+      },
+    };
+    logUpload("file parsed", logContext);
+    stage = "validate metadata";
     if (!projectId || !plotId || !requestedPhotoId || !original || !standard || !thumbnail) {
+      logUploadError("validation failed", new Error("INCOMPLETE_PHOTO_UPLOAD"), { ...logContext, stage });
       return res.status(400).json({ error: "Photo upload details are incomplete." });
     }
+    if (!isObjectId(projectId) || !isObjectId(plotId) || (noteId && !isObjectId(noteId))) {
+      logUploadError("validation failed", new Error("INVALID_RELATIONSHIP_ID"), { ...logContext, stage });
+      return res.status(400).json({ error: "Photo upload details are invalid." });
+    }
+    if (!original.data.length || !thumbnail.data.length || original.data.length > MAX_PHOTO_BYTES || thumbnail.data.length > MAX_PHOTO_BYTES || standard.data.length > MAX_PHOTO_BYTES) {
+      logUploadError("validation failed", new Error("INVALID_PHOTO_SIZE"), { ...logContext, stage });
+      return res.status(400).json({ error: "Choose a photo up to 20 MB." });
+    }
     if (!(await authorizeRelationship(userId, projectId, plotId, noteId))) {
+      logUploadError("relationship authorization failed", new Error("PHOTO_RELATIONSHIP_FORBIDDEN"), { ...logContext, stage });
       return res.status(403).json({ error: "You do not have access to attach photos here." });
     }
+    logUpload("metadata validated", { ...logContext, stage });
+    stage = "metadata lookup";
     const existingPhoto = await Photos.findOne({ photoId: requestedPhotoId, userId }).lean();
     if (existingPhoto) {
+      logUpload("idempotent photo already exists", { ...logContext, stage });
       return res.status(200).json({ photo: { ...existingPhoto, variants: publicVariantMetadata(existingPhoto.photoId, existingPhoto.variants as any) } });
     }
     const photoId = requestedPhotoId || randomUUID();
-    const originalVariant = await uploadEncryptedVariant(original);
+    stage = "encrypt original";
+    const originalVariant = await uploadEncryptedVariant(original, "original", logContext);
     uploadedStorageIds.push(originalVariant.storageId);
-    const standardVariant = standard === original ? originalVariant : await uploadEncryptedVariant(standard);
+    stage = "encrypt standard";
+    const standardVariant = standard === original ? originalVariant : await uploadEncryptedVariant(standard, "standard", logContext);
     if (standardVariant !== originalVariant) uploadedStorageIds.push(standardVariant.storageId);
-    const thumbnailVariant = await uploadEncryptedVariant(thumbnail);
+    stage = "encrypt thumbnail";
+    const thumbnailVariant = await uploadEncryptedVariant(thumbnail, "thumbnail", logContext);
     uploadedStorageIds.push(thumbnailVariant.storageId);
     const variants = { original: originalVariant, standard: standardVariant, thumbnail: thumbnailVariant };
+    stage = "metadata save";
     const photo = await Photos.create({
       photoId,
       userId,
@@ -188,14 +285,22 @@ export const UploadPhoto: RequestHandler = async (req, res) => {
     if (noteId) {
       await PlotNotes.updateOne({ _id: noteId, userId, projectId, plotId }, { $addToSet: { "content.0.photoIds": photoId } });
     }
+    logUpload("metadata saved", { ...logContext, stage });
     const photoObject = photo.toObject();
     return res.status(201).json({ photo: { ...photoObject, variants: publicVariantMetadata(photoId, photoObject.variants as any) } });
   } catch (error: any) {
-    if (uploadedStorageIds.length) await del(uploadedStorageIds.map(storagePath)).catch(() => undefined);
+    logUploadError("upload failed", error, { ...logContext, stage });
+    if (uploadedStorageIds.length) {
+      await del(uploadedStorageIds.map(storagePath)).catch(cleanupError => {
+        logUploadError("blob cleanup failed", cleanupError, { ...logContext, stage: "cleanup" });
+      });
+    }
     if (error?.message === "PHOTO_UPLOAD_TOO_LARGE" || error?.message === "INVALID_PHOTO_SIZE") {
       return res.status(400).json({ error: "Choose a photo up to 20 MB." });
     }
-    console.error("Unable to upload photo", error);
+    if (error?.message === "INVALID_MULTIPART_BOUNDARY") {
+      return res.status(400).json({ error: "Photo upload details are incomplete." });
+    }
     return res.status(500).json({ error: "Unable to upload the photo. Please try again." });
   }
 };
