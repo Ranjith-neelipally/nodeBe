@@ -79,8 +79,16 @@ function readMultipartBody(req: Parameters<RequestHandler>[0]) {
   });
 }
 
+function inferMultipartBoundary(buffer: Buffer) {
+  if (buffer.subarray(0, 2).toString() !== "--") return null;
+  const lineEnd = buffer.indexOf(Buffer.from("\r\n"));
+  if (lineEnd <= 2) return null;
+  const boundary = buffer.subarray(2, lineEnd).toString("utf8");
+  return boundary && !boundary.includes("\u0000") ? boundary : null;
+}
+
 function parseMultipart(buffer: Buffer, contentType = "") {
-  const boundary = /boundary=([^;]+)/i.exec(contentType)?.[1]?.replace(/^"|"$/g, "");
+  const boundary = /boundary=([^;]+)/i.exec(contentType)?.[1]?.replace(/^"|"$/g, "") || inferMultipartBoundary(buffer);
   if (!boundary) throw new Error("INVALID_MULTIPART_BOUNDARY");
   const marker = Buffer.from(`--${boundary}`);
   const parts: UploadedPart[] = [];

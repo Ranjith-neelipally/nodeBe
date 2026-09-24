@@ -37,6 +37,11 @@ const configuredOrigins = process.env.CORS_ORIGINS
 const allowedOrigins = new Set(
   configuredOrigins?.length ? configuredOrigins : defaultAllowedOrigins,
 );
+const isPhotoUploadRequest = (req: express.Request) => (
+  req.method === "POST" && req.path === "/photos/upload"
+);
+const jsonBodyParser = express.json({ limit: "2mb" });
+const urlencodedBodyParser = express.urlencoded({ extended: false, limit: "2mb" });
 
 app.disable("x-powered-by");
 app.use((_req, res, next) => {
@@ -74,8 +79,8 @@ app.use((req, res, next) => {
   return next();
 });
 
-app.use(express.json({ limit: "2mb" }));
-app.use(express.urlencoded({ extended: false, limit: "2mb" }));
+app.use((req, res, next) => isPhotoUploadRequest(req) ? next() : jsonBodyParser(req, res, next));
+app.use((req, res, next) => isPhotoUploadRequest(req) ? next() : urlencodedBodyParser(req, res, next));
 app.use(requestContextMiddleware);
 app.use(attachSyncContext);
 
