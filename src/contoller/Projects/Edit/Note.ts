@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import { PlotNotes } from "../../../modals/Projects/Notes";
 import { Plots } from "../../../modals/Projects/Plots";
+import { Photos } from "../../../modals/Photos";
 
 export const EditNote: RequestHandler = async (req, res) => {
   const { projectId, plotId, noteId, content, photoIds, title } = req.body;
@@ -18,6 +19,19 @@ export const EditNote: RequestHandler = async (req, res) => {
       return res
         .status(400)
         .json({ error: "Invalid plot for the specified project." });
+    }
+
+    if (Array.isArray(photoIds)) {
+      const requestedPhotoIds = photoIds.filter(id => typeof id === "string");
+      const ownedPhotoCount = requestedPhotoIds.length
+        ? await Photos.countDocuments({
+            photoId: { $in: requestedPhotoIds }, userId, projectId, plotId,
+            $or: [{ noteId }, { noteId: null }],
+          })
+        : 0;
+      if (ownedPhotoCount !== requestedPhotoIds.length) {
+        return res.status(400).json({ error: "One or more photos are not available for this note." });
+      }
     }
 
     const updateObj: any = {};
@@ -44,6 +58,19 @@ export const EditNote: RequestHandler = async (req, res) => {
 
     if (!updated) {
       return res.status(404).json({ error: "Note not found!" });
+    }
+
+    if (Array.isArray(photoIds)) {
+      await Promise.all([
+        Photos.updateMany(
+          { photoId: { $in: photoIds }, userId, projectId, plotId, noteId: null },
+          { $set: { noteId } },
+        ),
+        Photos.updateMany(
+          { photoId: { $nin: photoIds }, userId, projectId, plotId, noteId },
+          { $set: { noteId: null } },
+        ),
+      ]);
     }
 
     return res.status(200).json({

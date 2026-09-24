@@ -69,6 +69,7 @@ Required variables:
 - `MONGO_URI`
 - `TOKEN_KEY`
 - `BREVO_API_KEY`
+- `BLOB_READ_WRITE_TOKEN` (Vercel Blob client-upload authorization and deletion)
 - `MAIL_FROM_EMAIL` (use `no-reply@research-pal.com`)
 - `MAIL_FROM_NAME` (use `ResearchPal`)
 

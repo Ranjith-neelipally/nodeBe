@@ -1,326 +1,281 @@
+import { del, get, put } from "@vercel/blob";
 import { RequestHandler } from "express";
+import { createCipheriv, createDecipheriv, randomBytes, randomUUID } from "node:crypto";
+import { Photos } from "../../modals/Photos";
 import { PlotNotes } from "../../modals/Projects/Notes";
 import { Projects } from "../../modals/Projects";
 import { Plots } from "../../modals/Projects/Plots";
-import {
-  consumePhotoSignals,
-  deviceBelongsToUser,
-  enqueuePhotoSignal,
-  getOnlinePhotoDevices,
-  subscribePhotoSignals,
-  touchPhotoDevicePresence,
-} from "../../services/photoPresence";
 
+const MAX_PHOTO_BYTES = 20 * 1024 * 1024;
+const MAX_UPLOAD_BYTES = 60 * 1024 * 1024;
+const ENCRYPTED_PHOTO_TYPE = "application/octet-stream";
+const PHOTO_VARIANTS = ["original", "standard", "thumbnail"] as const;
+type PhotoVariant = typeof PHOTO_VARIANTS[number];
+type UploadedPart = { name: string; filename?: string; contentType?: string; data: Buffer };
 const firstString = (value: unknown) => typeof value === "string" && value.trim() ? value.trim() : null;
-const stringArray = (value: unknown) => Array.isArray(value) ? value.filter((item): item is string => typeof item === "string" && Boolean(item.trim())) : [];
-type PhotoSignalType = "photo-access-request" | "photo-access-response" | "photo-manifest-changed" | "offer" | "answer" | "ice-candidate" | "hangup" | "error";
+const createStorageId = () => randomBytes(32).toString("base64url");
+const storagePath = (storageId: string) => `research-pal/${storageId}.bin`;
+const isPhotoVariant = (value: string): value is PhotoVariant => PHOTO_VARIANTS.includes(value as PhotoVariant);
+const bytesToBase64Url = (bytes: Buffer) => bytes.toString("base64url");
+const base64UrlToBytes = (value: string) => Buffer.from(value, "base64url");
 
-async function findPhotoNote(userId: string, photoId: string) {
-  return PlotNotes.findOne({ userId, "content.photoIds": photoId });
+async function authorizeRelationship(userId: string, projectId: string, plotId: string, noteId?: string | null) {
+  const [project, plot] = await Promise.all([
+    Projects.findOne({ _id: projectId, userId }).select("_id"),
+    Plots.findOne({ _id: plotId, projectId, userId }).select("_id"),
+  ]);
+  if (!project || !plot) return false;
+  if (!noteId) return true;
+  return Boolean(await PlotNotes.exists({ _id: noteId, projectId, plotId, userId }));
 }
 
-function normalizeSignalPayload(type: PhotoSignalType, payload: unknown) {
-  const value = payload && typeof payload === "object" ? payload as Record<string, unknown> : {};
-  const connectionId = firstString(value.connectionId);
-  const senderDeviceId = firstString(value.senderDeviceId);
-  const targetDeviceId = firstString(value.targetDeviceId);
-  const basePayload = {
-    ...(connectionId ? { connectionId } : {}),
-    ...(senderDeviceId ? { senderDeviceId } : {}),
-    ...(targetDeviceId ? { targetDeviceId } : {}),
-  };
-  if (type === "offer" || type === "answer") {
-    if (value.type !== type || typeof value.sdp !== "string") return null;
-    return { ...basePayload, type: value.type, sdp: value.sdp };
-  }
-  if (type === "ice-candidate") {
-    if (typeof value.candidate !== "string") return null;
-    return {
-      ...basePayload,
-      candidate: value.candidate,
-      sdpMid: typeof value.sdpMid === "string" ? value.sdpMid : null,
-      sdpMLineIndex: typeof value.sdpMLineIndex === "number" ? value.sdpMLineIndex : null,
-      usernameFragment: typeof value.usernameFragment === "string" ? value.usernameFragment : undefined,
-    };
-  }
-  if (type === "error") {
-    return { ...basePayload, code: firstString(value.code) || "PHOTO_SIGNAL_ERROR" };
-  }
-  if (type === "photo-access-request") {
-    const sessionId = firstString(value.sessionId);
-    if (!sessionId) return null;
-    return { sessionId, requestedAt: Date.now() };
-  }
-  if (type === "photo-access-response") {
-    const sessionId = firstString(value.sessionId);
-    const decision = value.decision === "approved" || value.decision === "rejected" ? value.decision : null;
-    if (!sessionId || !decision) return null;
-    return { sessionId, decision, reason: firstString(value.reason) || undefined };
-  }
-  if (type === "photo-manifest-changed") {
-    return {
-      manifestVersion: firstString(value.manifestVersion) || `${Date.now()}`,
-      photoCount: typeof value.photoCount === "number" ? value.photoCount : undefined,
-      changedAt: Date.now(),
-    };
-  }
-  return basePayload;
+function readMultipartBody(req: Parameters<RequestHandler>[0]) {
+  return new Promise<Buffer>((resolve, reject) => {
+    const chunks: Buffer[] = [];
+    let total = 0;
+    req.on("data", (chunk: Buffer) => {
+      total += chunk.length;
+      if (total > MAX_UPLOAD_BYTES) {
+        reject(new Error("PHOTO_UPLOAD_TOO_LARGE"));
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => resolve(Buffer.concat(chunks)));
+    req.on("error", reject);
+  });
 }
 
-export const GetPhotoDetails: RequestHandler = async (req, res) => {
-  const userId = req.user.id;
-  const { photoId } = req.query as { photoId: string };
-
-  try {
-    const Note = await PlotNotes.findOne({ userId, "content.photoIds": photoId });
-    if (!Note) {
-      return res.status(404).json({ error: "Photo not found!" });
+function parseMultipart(buffer: Buffer, contentType = "") {
+  const boundary = /boundary=([^;]+)/i.exec(contentType)?.[1]?.replace(/^"|"$/g, "");
+  if (!boundary) throw new Error("INVALID_MULTIPART");
+  const marker = Buffer.from(`--${boundary}`);
+  const parts: UploadedPart[] = [];
+  let offset = 0;
+  while (offset < buffer.length) {
+    const markerIndex = buffer.indexOf(marker, offset);
+    if (markerIndex < 0) break;
+    const nextOffset = markerIndex + marker.length;
+    if (buffer.slice(nextOffset, nextOffset + 2).toString() === "--") break;
+    const partStart = nextOffset + 2;
+    const headerEnd = buffer.indexOf(Buffer.from("\r\n\r\n"), partStart);
+    if (headerEnd < 0) break;
+    const headers = buffer.slice(partStart, headerEnd).toString("utf8");
+    const partEnd = buffer.indexOf(marker, headerEnd + 4);
+    if (partEnd < 0) break;
+    const disposition = /content-disposition:\s*form-data;([^\r\n]+)/i.exec(headers)?.[1] || "";
+    const name = /name="([^"]+)"/i.exec(disposition)?.[1];
+    if (name) {
+      const filename = /filename="([^"]*)"/i.exec(disposition)?.[1];
+      const contentTypeHeader = /content-type:\s*([^\r\n]+)/i.exec(headers)?.[1]?.trim();
+      const dataEnd = buffer.slice(partEnd - 2, partEnd).toString() === "\r\n" ? partEnd - 2 : partEnd;
+      parts.push({ name, filename, contentType: contentTypeHeader, data: buffer.slice(headerEnd + 4, dataEnd) });
     }
-    const plot = await Plots.findById(Note.plotId);
-    const project = await Projects.findById(Note.projectId);
+    offset = partEnd;
+  }
+  return parts;
+}
 
-    const response = {
-      _id: Note._id,
-      projectId: Note.projectId,
-      plotId: Note.plotId,
-      content: Note.content,
-      userId: Note.userId,
-      createdAt: Note.createdAt,
-      updatedAt: Note.updatedAt,
-      title: plot?.title,
-      replication: plot?.replication,
-      treatment: plot?.treatment,
-      replicationName: plot?.replicationName,
-      treatmentName: plot?.treatmentName,
-      __v: Note.__v,
-      ProjectTitle: project?.title,
+function field(parts: UploadedPart[], name: string) {
+  return parts.find(part => part.name === name && !part.filename)?.data.toString("utf8").trim() || null;
+}
+
+function filePart(parts: UploadedPart[], variant: PhotoVariant) {
+  return parts.find(part => part.name === variant && part.filename);
+}
+
+function encryptPhotoBytes(plain: Buffer, mimeType: string) {
+  const key = randomBytes(32);
+  const iv = randomBytes(12);
+  const cipher = createCipheriv("aes-256-gcm", key, iv, { authTagLength: 16 });
+  const encrypted = Buffer.concat([cipher.update(plain), cipher.final(), cipher.getAuthTag()]);
+  return {
+    encrypted,
+    metadata: {
+      algorithm: "AES-256-GCM" as const,
+      key: bytesToBase64Url(key),
+      iv: bytesToBase64Url(iv),
+      authTagLength: 128,
+      mimeType,
+    },
+  };
+}
+
+function decryptPhotoBytes(encrypted: Buffer, encryption: any) {
+  const authTagBytes = Number(encryption.authTagLength || 128) / 8;
+  const authTag = encrypted.subarray(encrypted.length - authTagBytes);
+  const ciphertext = encrypted.subarray(0, encrypted.length - authTagBytes);
+  const decipher = createDecipheriv(
+    "aes-256-gcm",
+    base64UrlToBytes(encryption.key),
+    base64UrlToBytes(encryption.iv),
+    { authTagLength: authTagBytes },
+  );
+  decipher.setAuthTag(authTag);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
+}
+
+async function uploadEncryptedVariant(part: UploadedPart) {
+  if (!part.data.length || part.data.length > MAX_PHOTO_BYTES) throw new Error("INVALID_PHOTO_SIZE");
+  const storageId = createStorageId();
+  const { encrypted, metadata } = encryptPhotoBytes(part.data, part.contentType || "image/jpeg");
+  await put(storagePath(storageId), encrypted, {
+    access: "private",
+    addRandomSuffix: false,
+    allowOverwrite: false,
+    contentType: ENCRYPTED_PHOTO_TYPE,
+  });
+  return { storageId, encryption: metadata };
+}
+
+function publicVariantMetadata(photoId: string, variants: Record<PhotoVariant, any>) {
+  const result: Record<string, any> = {};
+  for (const variant of PHOTO_VARIANTS) {
+    result[variant] = {
+      storageId: variants[variant].storageId,
+      url: `/photos/${encodeURIComponent(photoId)}/${variant}`,
+      mimeType: variants[variant].encryption?.mimeType || "image/jpeg",
     };
-    return res.status(200).json(response);
-  } catch (error) {
-    return res.status(500).json({ error: "Internal Server Error" });
+  }
+  return result;
+}
+
+export const UploadPhoto: RequestHandler = async (req, res) => {
+  const uploadedStorageIds: string[] = [];
+  try {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error("BLOB_READ_WRITE_TOKEN is not configured");
+      return res.status(503).json({ error: "Photo storage is not configured." });
+    }
+    const parts = parseMultipart(await readMultipartBody(req), req.headers["content-type"]);
+    const userId = req.user.id.toString();
+    const projectId = field(parts, "projectId");
+    const plotId = field(parts, "plotId");
+    const noteId = field(parts, "noteId");
+    const capturedAt = field(parts, "capturedAt");
+    const requestedPhotoId = firstString(field(parts, "photoId")) || firstString(field(parts, "idempotencyKey"));
+    const original = filePart(parts, "original");
+    const standard = filePart(parts, "standard") || original;
+    const thumbnail = filePart(parts, "thumbnail");
+    if (!projectId || !plotId || !requestedPhotoId || !original || !standard || !thumbnail) {
+      return res.status(400).json({ error: "Photo upload details are incomplete." });
+    }
+    if (!(await authorizeRelationship(userId, projectId, plotId, noteId))) {
+      return res.status(403).json({ error: "You do not have access to attach photos here." });
+    }
+    const existingPhoto = await Photos.findOne({ photoId: requestedPhotoId, userId }).lean();
+    if (existingPhoto) {
+      return res.status(200).json({ photo: { ...existingPhoto, variants: publicVariantMetadata(existingPhoto.photoId, existingPhoto.variants as any) } });
+    }
+    const photoId = requestedPhotoId || randomUUID();
+    const originalVariant = await uploadEncryptedVariant(original);
+    uploadedStorageIds.push(originalVariant.storageId);
+    const standardVariant = standard === original ? originalVariant : await uploadEncryptedVariant(standard);
+    if (standardVariant !== originalVariant) uploadedStorageIds.push(standardVariant.storageId);
+    const thumbnailVariant = await uploadEncryptedVariant(thumbnail);
+    uploadedStorageIds.push(thumbnailVariant.storageId);
+    const variants = { original: originalVariant, standard: standardVariant, thumbnail: thumbnailVariant };
+    const photo = await Photos.create({
+      photoId,
+      userId,
+      projectId,
+      plotId,
+      noteId: noteId || null,
+      variants,
+      capturedAt: capturedAt ? new Date(capturedAt) : new Date(),
+    });
+    if (noteId) {
+      await PlotNotes.updateOne({ _id: noteId, userId, projectId, plotId }, { $addToSet: { "content.0.photoIds": photoId } });
+    }
+    const photoObject = photo.toObject();
+    return res.status(201).json({ photo: { ...photoObject, variants: publicVariantMetadata(photoId, photoObject.variants as any) } });
+  } catch (error: any) {
+    if (uploadedStorageIds.length) await del(uploadedStorageIds.map(storagePath)).catch(() => undefined);
+    if (error?.message === "PHOTO_UPLOAD_TOO_LARGE" || error?.message === "INVALID_PHOTO_SIZE") {
+      return res.status(400).json({ error: "Choose a photo up to 20 MB." });
+    }
+    console.error("Unable to upload photo", error);
+    return res.status(500).json({ error: "Unable to upload the photo. Please try again." });
   }
 };
 
 export const GetPhotoLibrary: RequestHandler = async (req, res) => {
-  const userId = req.user.id;
-
   try {
-    const notesWithPhotos = await PlotNotes.find({ userId });
-    const onlineDevices = getOnlinePhotoDevices(userId.toString());
-    const mobileDevices = onlineDevices.filter(device => device.clientType === "mobile");
-    const photoDevices = mobileDevices.map(device => ({
-      device,
-      availablePhotoIds: new Set(device.availablePhotoIds || []),
-    }));
-    const seenNotePhotos = new Set<string>();
-    const photos: Array<Record<string, unknown>> = [];
-
-    for (const note of notesWithPhotos) {
-      const plot = await Plots.findById(note.plotId);
-      const project = await Projects.findById(note.projectId);
-      for (const item of note.content || []) {
-        for (const photoId of item.photoIds || []) {
-          const notePhotoKey = `${note._id.toString()}:${photoId}`;
-          if (seenNotePhotos.has(notePhotoKey)) continue;
-          seenNotePhotos.add(notePhotoKey);
-          const matchingDevices = photoDevices.filter(({ availablePhotoIds }) => availablePhotoIds.has(photoId));
-          const sourceDevices = matchingDevices.length ? matchingDevices : photoDevices.length ? [] : [{ device: null, availablePhotoIds: new Set<string>() }];
-          for (const { device } of sourceDevices) {
-            photos.push({
-              photoId,
-              userId: note.userId.toString(),
-              projectId: note.projectId.toString(),
-              plotId: note.plotId.toString(),
-              noteId: note._id.toString(),
-              sourceDeviceId: device?.deviceId || null,
-              manifestVersion: device?.manifestVersion || null,
-              capturedAt: note.createdAt,
-              mimeType: "image/jpeg",
-              projectTitle: project?.title || note.ProjectTitle || null,
-              plotTitle: plot?.title || note.title || null,
-              replication: plot?.replication,
-              treatment: plot?.treatment,
-              notePreview: Array.isArray(item.note) ? item.note.join(" ").slice(0, 240) : "",
-              deviceAvailable: Boolean(device),
-            });
-          }
-        }
-      }
-    }
-    if (process.env.NODE_ENV !== "production") {
-      mobileDevices.forEach(device => {
-        console.log(`[PHOTO MANIFEST] ${JSON.stringify({
-          deviceId: device.deviceId,
-          version: device.manifestVersion || null,
-          count: device.availablePhotoIds?.length || 0,
-        })}`);
-      });
-    }
-
-    return res.status(200).json({ photos, devices: onlineDevices });
+    const userId = req.user.id;
+    const records = await Photos.find({ userId }).sort({ capturedAt: -1 }).lean();
+    const [projects, plots, notes] = await Promise.all([
+      Projects.find({ _id: { $in: records.map(photo => photo.projectId) }, userId }).select("title").lean(),
+      Plots.find({ _id: { $in: records.map(photo => photo.plotId) }, userId }).select("title replication treatment").lean(),
+      PlotNotes.find({ _id: { $in: records.map(photo => photo.noteId).filter(Boolean) }, userId }).select("content").lean(),
+    ]);
+    const projectMap = new Map(projects.map(project => [project._id.toString(), project]));
+    const plotMap = new Map(plots.map(plot => [plot._id.toString(), plot]));
+    const noteMap = new Map(notes.map(note => [note._id.toString(), note]));
+    const photos = records.map(photo => {
+      const note = photo.noteId ? noteMap.get(photo.noteId.toString()) : null;
+      const project = projectMap.get(photo.projectId.toString());
+      const plot = plotMap.get(photo.plotId.toString());
+      return {
+        photoId: photo.photoId, userId: photo.userId.toString(), projectId: photo.projectId.toString(),
+        plotId: photo.plotId.toString(), noteId: photo.noteId?.toString() || null,
+        variants: publicVariantMetadata(photo.photoId, photo.variants as any),
+        capturedAt: photo.capturedAt, projectTitle: project?.title || null, plotTitle: plot?.title || null,
+        replication: plot?.replication, treatment: plot?.treatment,
+        notePreview: note?.content?.flatMap(item => item.note || []).join(" ").slice(0, 240) || "",
+      };
+    });
+    return res.status(200).json({ photos });
   } catch (error) {
-    return res.status(500).json({ error: "Internal Server Error" });
+    return res.status(500).json({ error: "Unable to load photos." });
   }
 };
 
-export const RegisterPhotoDevice: RequestHandler = async (req, res) => {
-  const userId = req.user.id.toString();
-  const deviceId = firstString(req.body?.deviceId) || firstString(req.headers["x-device-id"]);
-  const clientType = req.body?.clientType === "web" ? "web" : "mobile";
-
-  if (!deviceId) return res.status(400).json({ error: "deviceId is required." });
-
-  touchPhotoDevicePresence({
-    userId,
-    deviceId,
-    clientType,
-    model: firstString(req.body?.model) || firstString(req.headers["x-device-model"]) || undefined,
-    platform: firstString(req.body?.platform) || firstString(req.headers["x-device-platform"]) || undefined,
-    osVersion: firstString(req.body?.osVersion) || firstString(req.headers["x-device-os-version"]) || undefined,
-    availablePhotoIds: stringArray(req.body?.availablePhotoIds),
-    manifestVersion: firstString(req.body?.manifestVersion) || undefined,
-  });
-
-  return res.status(200).json({ deviceId, devices: getOnlinePhotoDevices(userId) });
+export const GetPhotoDetails: RequestHandler = async (req, res) => {
+  const photoId = firstString(req.query.photoId);
+  const photo = photoId ? await Photos.findOne({ photoId, userId: req.user.id }).lean() : null;
+  if (!photo) return res.status(404).json({ error: "Photo not found!" });
+  const [note, plot, project] = await Promise.all([
+    photo.noteId ? PlotNotes.findOne({ _id: photo.noteId, userId: req.user.id }).lean() : null,
+    Plots.findOne({ _id: photo.plotId, userId: req.user.id }).lean(),
+    Projects.findOne({ _id: photo.projectId, userId: req.user.id }).lean(),
+  ]);
+  return res.status(200).json({ ...photo, variants: publicVariantMetadata(photo.photoId, photo.variants as any), _id: note?._id, content: note?.content || [], title: plot?.title, replication: plot?.replication, treatment: plot?.treatment, ProjectTitle: project?.title });
 };
 
-export const GetPhotoDevices: RequestHandler = async (req, res) => {
-  return res.status(200).json({ devices: getOnlinePhotoDevices(req.user.id.toString()) });
+export const FetchPhotoVariant: RequestHandler = async (req, res) => {
+  try {
+    const variant = req.params.variant;
+    if (!isPhotoVariant(variant)) return res.status(404).json({ error: "Photo not found." });
+    const photo = await Photos.findOne({ photoId: req.params.photoId, userId: req.user.id }).lean();
+    if (!photo) return res.status(404).json({ error: "Photo not found." });
+    const variantPayload = (photo.variants as any)[variant];
+    const blob = await get(storagePath(variantPayload.storageId), { access: "private", useCache: false });
+    if (!blob || blob.statusCode !== 200 || !blob.stream) return res.status(404).json({ error: "Photo not found." });
+    const encrypted = Buffer.from(await new Response(blob.stream).arrayBuffer());
+    const decrypted = decryptPhotoBytes(encrypted, variantPayload.encryption);
+    res.setHeader("Content-Type", variantPayload.encryption.mimeType || "image/jpeg");
+    res.setHeader("Cache-Control", "private, max-age=300");
+    return res.status(200).send(decrypted);
+  } catch (error) {
+    console.error("Unable to fetch photo", error);
+    return res.status(500).json({ error: "Unable to load photo." });
+  }
 };
 
-export const PostPhotoSignal: RequestHandler = async (req, res) => {
-  const userId = req.user.id.toString();
-  const fromDeviceId = firstString(req.body?.fromDeviceId) || firstString(req.headers["x-device-id"]);
-  const toDeviceId = firstString(req.body?.toDeviceId);
-  const type = firstString(req.body?.type);
-  const photoId = firstString(req.body?.photoId);
-
-  if (!fromDeviceId || !toDeviceId || !type) {
-    return res.status(400).json({ error: "fromDeviceId, toDeviceId, and type are required." });
+export const DeletePhoto: RequestHandler = async (req, res) => {
+  try {
+    const photo = await Photos.findOne({ photoId: req.params.photoId, userId: req.user.id });
+    if (!photo) return res.status(404).json({ error: "Photo not found." });
+    const storageIds = new Set(Object.values((photo.toObject() as any).variants || {}).map((variant: any) => variant.storageId).filter(Boolean));
+    await del([...storageIds].map(storagePath));
+    await Promise.all([
+      PlotNotes.updateMany({ userId: req.user.id, "content.photoIds": photo.photoId }, { $pull: { "content.$[].photoIds": photo.photoId } }),
+      Photos.deleteOne({ _id: photo._id, userId: req.user.id }),
+    ]);
+    return res.status(204).send();
+  } catch (error) {
+    console.error("Unable to delete photo", error);
+    return res.status(500).json({ error: "Unable to delete the photo. Please try again." });
   }
-  touchPhotoDevicePresence({
-    userId,
-    deviceId: fromDeviceId,
-    clientType: req.headers["x-client-type"] === "mobile" ? "mobile" : "web",
-    model: firstString(req.headers["x-device-model"]) || undefined,
-    platform: firstString(req.headers["x-device-platform"]) || undefined,
-    osVersion: firstString(req.headers["x-device-os-version"]) || undefined,
-  });
-  const signalType = type as PhotoSignalType;
-  if (signalType !== "photo-access-response" && signalType !== "photo-manifest-changed" && !deviceBelongsToUser(userId, toDeviceId)) {
-    return res.status(403).json({ error: "Device is not available for this account." });
-  }
-  if (photoId && !(await findPhotoNote(userId, photoId))) {
-    return res.status(404).json({ error: "Photo not found!" });
-  }
-  if (!["photo-access-request", "photo-access-response", "photo-manifest-changed", "offer", "answer", "ice-candidate", "hangup", "error"].includes(type)) {
-    return res.status(400).json({ error: "Unsupported signal type." });
-  }
-  const payload = normalizeSignalPayload(signalType, req.body?.payload);
-  if (!payload) {
-    return res.status(400).json({ error: "Malformed signal payload." });
-  }
-  if (process.env.NODE_ENV !== "production") {
-    console.log(`[SIGNAL] ${signalType}`);
-  }
-
-  const message = enqueuePhotoSignal({
-    userId,
-    fromDeviceId,
-    toDeviceId,
-    type: signalType,
-    payload,
-  });
-
-  return res.status(202).json({ messageId: message.id });
-};
-
-export const TriggerPhotoAccessNotification: RequestHandler = async (req, res) => {
-  const userId = req.user.id.toString();
-  const deviceId = firstString(req.body?.deviceId);
-  if (deviceId && !deviceBelongsToUser(userId, deviceId)) {
-    return res.status(404).json({ error: "Mobile device is not available for this account." });
-  }
-  if (process.env.NODE_ENV !== "production") {
-    console.log("[PHOTO ACCESS PUSH]", {
-      userId,
-      deviceId: deviceId || "registered-mobile-device",
-      title: "ResearchPal Web wants to access your photos",
-      body: "If this was you, open ResearchPal and approve the request. Otherwise, ignore this notification.",
-    });
-  }
-  return res.status(202).json({ queued: true });
-};
-
-export const GetPhotoSignals: RequestHandler = async (req, res) => {
-  const userId = req.user.id.toString();
-  const deviceId = firstString(req.query?.deviceId) || firstString(req.headers["x-device-id"]);
-  const after = firstString(req.query?.after);
-
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.setHeader("Pragma", "no-cache");
-  res.setHeader("Expires", "0");
-  res.setHeader("Surrogate-Control", "no-store");
-
-  if (!deviceId) return res.status(400).json({ error: "deviceId is required." });
-  touchPhotoDevicePresence({
-    userId,
-    deviceId,
-    clientType: req.headers["x-client-type"] === "mobile" ? "mobile" : "web",
-    model: firstString(req.headers["x-device-model"]) || undefined,
-    platform: firstString(req.headers["x-device-platform"]) || undefined,
-    osVersion: firstString(req.headers["x-device-os-version"]) || undefined,
-  });
-
-  return res.status(200).json({ messages: consumePhotoSignals(userId, deviceId, after || undefined) });
-};
-
-export const StreamPhotoSignals: RequestHandler = async (req, res) => {
-  const userId = req.user.id.toString();
-  const deviceId = firstString(req.query?.deviceId) || firstString(req.headers["x-device-id"]);
-
-  if (!deviceId) return res.status(400).json({ error: "deviceId is required." });
-
-  touchPhotoDevicePresence({
-    userId,
-    deviceId,
-    clientType: req.headers["x-client-type"] === "mobile" ? "mobile" : "web",
-    model: firstString(req.headers["x-device-model"]) || undefined,
-    platform: firstString(req.headers["x-device-platform"]) || undefined,
-    osVersion: firstString(req.headers["x-device-os-version"]) || undefined,
-  });
-
-  res.status(200);
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
-  res.setHeader("Connection", "keep-alive");
-  res.setHeader("X-Accel-Buffering", "no");
-  res.flushHeaders?.();
-  res.write(": connected\n\n");
-
-  const writeSignal = (message: ReturnType<typeof consumePhotoSignals>[number]) => {
-    res.write(`id: ${message.id}\n`);
-    res.write("event: photo-signal\n");
-    res.write(`data: ${JSON.stringify(message)}\n\n`);
-  };
-
-  consumePhotoSignals(userId, deviceId).forEach(writeSignal);
-  const unsubscribe = subscribePhotoSignals(userId, deviceId, writeSignal);
-  const heartbeat = setInterval(() => {
-    touchPhotoDevicePresence({
-      userId,
-      deviceId,
-      clientType: req.headers["x-client-type"] === "mobile" ? "mobile" : "web",
-      model: firstString(req.headers["x-device-model"]) || undefined,
-      platform: firstString(req.headers["x-device-platform"]) || undefined,
-      osVersion: firstString(req.headers["x-device-os-version"]) || undefined,
-    });
-    res.write(": heartbeat\n\n");
-  }, 25_000);
-
-  req.on("close", () => {
-    clearInterval(heartbeat);
-    unsubscribe();
-    res.end();
-  });
 };

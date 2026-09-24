@@ -22,6 +22,9 @@ import { AppError } from "./utils/AppError";
 import dbConnect from "./db";
 
 const app = express();
+if (!process.env.BLOB_READ_WRITE_TOKEN) {
+  console.error("BLOB_READ_WRITE_TOKEN is not configured");
+}
 app.set("trust proxy", 1);
 
 const productionOrigins = ["https://research-pal.com", "https://www.research-pal.com"];

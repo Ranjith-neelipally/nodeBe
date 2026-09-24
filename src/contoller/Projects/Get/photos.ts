@@ -1,22 +1,12 @@
 import { RequestHandler } from "express";
-import { PlotNotes } from "../../../modals/Projects/Notes";
+import { Photos } from "../../../modals/Photos";
 
 export const GetAllPhotos: RequestHandler = async (req, res, next) => {
   const userId = req.user.id;
 
   try {
-    const notesWithPhotos = await PlotNotes.find({
-      userId,
-    });
-
-    const allPhotoIds: string[] = [];
-    notesWithPhotos.forEach((note: any) => {
-      note.content.forEach((item: any) => {
-        allPhotoIds.push(...item.photoIds);
-      });
-    });
-
-    return res.status(200).json({ allPhotoIds });
+    const photos = await Photos.find({ userId }).sort({ capturedAt: -1 }).lean();
+    return res.status(200).json({ photos });
   } catch (error) {
     return res.status(500).json({ error: "Internal Server Error" });
   }

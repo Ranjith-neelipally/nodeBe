@@ -9,6 +9,8 @@ import { SyncChange } from "../../../modals/Sync/SyncChange";
 import { SyncConflict } from "../../../modals/Sync/SyncConflict";
 import { OperationReceipt } from "../../../modals/Sync/OperationReceipt";
 import { ObservationSessions, ObservationTypes } from "../../../modals/Projects/Observations";
+import { Photos } from "../../../modals/Photos";
+import { del } from "@vercel/blob";
 
 export const DeleteProject: RequestHandler = async (
   req,
@@ -40,8 +42,13 @@ export const DeleteProject: RequestHandler = async (
       ...plots.map((plot) => plot._id.toString()),
       ...notes.map((note) => note._id.toString()),
     ];
+    const projectPhotoPathnames = [...new Set((await Photos.find({ projectId: project._id, userId }).select("variants").lean())
+      .flatMap(photo => Object.values((photo as any).variants || {}).map((variant: any) => variant.storageId).filter(Boolean)))]
+      .map(storageId => `research-pal/${storageId}.bin`);
+    if (projectPhotoPathnames.length) await del(projectPhotoPathnames);
 
     await Promise.all([
+      Photos.deleteMany({ projectId: project._id, userId }),
       PlotNotes.deleteMany({ projectId: project._id, userId }),
       Plots.deleteMany({ projectId: project._id, userId }),
       Ideas.deleteMany({ projectId: project._id, userId }),
@@ -82,6 +89,7 @@ export const DeleteNote: RequestHandler = async (
     }
 
     await Promise.all([
+      Photos.updateMany({ noteId: note._id, userId }, { $set: { noteId: null } }),
       Plots.findOneAndUpdate(
         { _id: plotId, projectId, userId },
         [{ $set: { notesCount: { $max: [0, { $subtract: ["$notesCount", 1] }] } } }],

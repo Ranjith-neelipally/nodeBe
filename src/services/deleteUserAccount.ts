@@ -11,10 +11,16 @@ import { OperationReceipt } from "../modals/Sync/OperationReceipt";
 import { SyncChange } from "../modals/Sync/SyncChange";
 import { SyncConflict } from "../modals/Sync/SyncConflict";
 import { AccountDeletionOtp } from "../modals/AccountDeletionOtp";
+import { Photos } from "../modals/Photos";
+import { del } from "@vercel/blob";
 
 export async function deleteUserAccount(userId: string, otpId: string) {
   const session = await mongoose.startSession();
   try {
+    const photoPathnames = [...new Set((await Photos.find({ userId }).select("variants").lean())
+      .flatMap(photo => Object.values((photo as any).variants || {}).map((variant: any) => variant.storageId).filter(Boolean)))]
+      .map(storageId => `research-pal/${storageId}.bin`);
+    if (photoPathnames.length) await del(photoPathnames);
     await session.withTransaction(async () => {
       const projectIds = (await Projects.find({ userId }, { _id: 1 }, { session }).lean()).map(p => p._id);
       const consumed = await AccountDeletionOtp.updateOne(
@@ -25,6 +31,7 @@ export async function deleteUserAccount(userId: string, otpId: string) {
       await ObservationSessions.deleteMany({ projectId: { $in: projectIds } }, { session });
       await ObservationTypes.deleteMany({ projectId: { $in: projectIds } }, { session });
       await PlotNotes.deleteMany({ $or: [{ userId }, { projectId: { $in: projectIds } }] }, { session });
+      await Photos.deleteMany({ userId }, { session });
       await Plots.deleteMany({ $or: [{ userId }, { projectId: { $in: projectIds } }] }, { session });
       await Ideas.deleteMany({ $or: [{ userId }, { projectId: { $in: projectIds } }] }, { session });
       await Treatments.deleteMany({ projectId: { $in: projectIds.map(String) } }, { session });
