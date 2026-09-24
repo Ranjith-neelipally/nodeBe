@@ -4,7 +4,7 @@ const OBSERVATION_TYPES_COLLECTION = "observationtypes";
 const STALE_NORMALIZED_NAME_INDEX = "projectId_1_normalizedName_1";
 const CURRENT_NAME_INDEX = "projectId_1_name_1";
 const PHOTOS_COLLECTION = "photos";
-const STALE_PHOTO_PATHNAME_INDEX = "pathname_1";
+const STALE_PHOTO_INDEXES = ["pathname_1", "storageId_1"];
 
 export async function migrateObservationTypeIndexes(db: Db) {
   const collection = db.collection(OBSERVATION_TYPES_COLLECTION);
@@ -48,12 +48,14 @@ export async function migratePhotoIndexes(db: Db) {
     if (error?.code !== 26 && error?.codeName !== "NamespaceNotFound") throw error;
   }
 
-  if (indexes.some(index => index.name === STALE_PHOTO_PATHNAME_INDEX)) {
-    try {
-      await collection.dropIndex(STALE_PHOTO_PATHNAME_INDEX);
-      console.log(`Dropped stale MongoDB index ${STALE_PHOTO_PATHNAME_INDEX}`);
-    } catch (error: any) {
-      if (error?.code !== 27 && error?.codeName !== "IndexNotFound") throw error;
+  for (const indexName of STALE_PHOTO_INDEXES) {
+    if (indexes.some(index => index.name === indexName)) {
+      try {
+        await collection.dropIndex(indexName);
+        console.log(`Dropped stale MongoDB index ${indexName}`);
+      } catch (error: any) {
+        if (error?.code !== 27 && error?.codeName !== "IndexNotFound") throw error;
+      }
     }
   }
 }

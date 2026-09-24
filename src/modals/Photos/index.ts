@@ -4,6 +4,7 @@ const PhotoSchema = new Schema(
   {
     photoId: { type: String, required: true, unique: true, index: true },
     pathname: { type: String, default: undefined, select: false },
+    storageId: { type: String, default: undefined, select: false },
     userId: { type: Types.ObjectId, ref: "User", required: true, index: true },
     projectId: { type: Types.ObjectId, ref: "Projects", required: true, index: true },
     plotId: { type: Types.ObjectId, ref: "Plots", required: true, index: true },

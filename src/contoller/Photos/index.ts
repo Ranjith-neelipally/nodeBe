@@ -201,7 +201,7 @@ function publicVariantMetadata(photoId: string, variants: Record<PhotoVariant, a
 }
 
 function publicPhotoPayload(photo: Record<string, any>) {
-  const { pathname: _pathname, ...safePhoto } = photo;
+  const { pathname: _pathname, storageId: _storageId, ...safePhoto } = photo;
   return {
     ...safePhoto,
     variants: publicVariantMetadata(photo.photoId, photo.variants as any),
@@ -296,6 +296,7 @@ export const UploadPhoto: RequestHandler = async (req, res) => {
       plotId,
       noteId: noteId || null,
       pathname: storagePath(originalVariant.storageId),
+      storageId: originalVariant.storageId,
       variants,
       capturedAt: capturedAt ? new Date(capturedAt) : new Date(),
     });
