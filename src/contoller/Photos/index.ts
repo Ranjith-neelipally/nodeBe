@@ -200,6 +200,14 @@ function publicVariantMetadata(photoId: string, variants: Record<PhotoVariant, a
   return result;
 }
 
+function publicPhotoPayload(photo: Record<string, any>) {
+  const { pathname: _pathname, ...safePhoto } = photo;
+  return {
+    ...safePhoto,
+    variants: publicVariantMetadata(photo.photoId, photo.variants as any),
+  };
+}
+
 export const UploadPhoto: RequestHandler = async (req, res) => {
   const uploadedStorageIds: string[] = [];
   let stage = "request received";
@@ -267,7 +275,7 @@ export const UploadPhoto: RequestHandler = async (req, res) => {
     const existingPhoto = await Photos.findOne({ photoId: requestedPhotoId, userId }).lean();
     if (existingPhoto) {
       logUpload("idempotent photo already exists", { ...logContext, stage });
-      return res.status(200).json({ photo: { ...existingPhoto, variants: publicVariantMetadata(existingPhoto.photoId, existingPhoto.variants as any) } });
+      return res.status(200).json({ photo: publicPhotoPayload(existingPhoto) });
     }
     const photoId = requestedPhotoId || randomUUID();
     stage = "encrypt original";
@@ -287,6 +295,7 @@ export const UploadPhoto: RequestHandler = async (req, res) => {
       projectId,
       plotId,
       noteId: noteId || null,
+      pathname: storagePath(originalVariant.storageId),
       variants,
       capturedAt: capturedAt ? new Date(capturedAt) : new Date(),
     });
@@ -295,7 +304,7 @@ export const UploadPhoto: RequestHandler = async (req, res) => {
     }
     logUpload("metadata saved", { ...logContext, stage });
     const photoObject = photo.toObject();
-    return res.status(201).json({ photo: { ...photoObject, variants: publicVariantMetadata(photoId, photoObject.variants as any) } });
+    return res.status(201).json({ photo: publicPhotoPayload(photoObject) });
   } catch (error: any) {
     logUploadError("upload failed", error, { ...logContext, stage });
     if (uploadedStorageIds.length) {
